@@ -1,0 +1,101 @@
+# Simulation coefficients.
+#
+# These are the elasticities that turn a lever movement into a change in the
+# underlying operational drivers. Erlang C then does the rest — these numbers
+# never touch waiting time or SLA directly, which is why the model stays
+# internally consistent when several levers move at once.
+#
+# Read every value as: "a full 0 -> 1 movement of this lever changes the target
+# driver by this fraction". A deflection coefficient of 0.55 means that taking
+# digital adoption from 0% to 100% removes 55% of phone volume.
+#
+# Tune these against observed history. They are intentionally in config rather
+# than code so an analyst can calibrate without a deployment.
+
+default:
+  deflection:
+    # Share of contacts diverted away from agents.
+    digital_adoption: 0.55
+    self_service_rate: 0.62
+    customer_ai: 0.48
+    automation_level: 0.40
+
+  aht:
+    # Fractional reduction in handle time.
+    agent_ai: 0.22
+    knowledge_base_quality: 0.18
+
+  fcr:
+    # Additive percentage-point gain, as a fraction.
+    agent_ai: 0.12
+    knowledge_base_quality: 0.15
+
+  repeat:
+    # Each unresolved contact generates this many follow-up contacts.
+    factor: 0.85
+
+  satisfaction:
+    # Weights for the CSAT composite. Applied to deltas versus baseline.
+    base: 0.78
+    sla_weight: 0.35
+    fcr_weight: 0.30
+    abandonment_weight: 0.55
+    wait_weight: 0.20
+    # Waiting time is normalised against this before weighting.
+    wait_reference_sec: 180.0
+
+  queue:
+    # How much a stated queue-size policy stretches caller patience.
+    # Larger declared queues make callers give up sooner.
+    tolerance_at_min: 1.25
+    tolerance_at_max: 0.80
+
+  workforce:
+    # Extending opening hours spreads the same demand over a wider window,
+    # flattening the peak this exponent controls. 0 = no flattening,
+    # 1 = perfectly proportional.
+    hours_flattening: 0.55
+
+# Per-center-type overrides. Only the keys listed are replaced; everything
+# else falls back to `default`.
+by_center_type:
+  medical:
+    deflection:
+      # Clinical questions resist self-service far more than admin ones.
+      digital_adoption: 0.30
+      self_service_rate: 0.34
+      customer_ai: 0.22
+      automation_level: 0.20
+    aht:
+      agent_ai: 0.14
+    satisfaction:
+      abandonment_weight: 0.70
+
+  technical_support:
+    deflection:
+      digital_adoption: 0.62
+      self_service_rate: 0.68
+      customer_ai: 0.55
+    aht:
+      agent_ai: 0.28
+      knowledge_base_quality: 0.24
+    fcr:
+      knowledge_base_quality: 0.20
+
+  general_inquiries:
+    deflection:
+      digital_adoption: 0.70
+      self_service_rate: 0.74
+      customer_ai: 0.58
+      automation_level: 0.52
+    repeat:
+      factor: 0.55
+
+  logistics:
+    deflection:
+      digital_adoption: 0.48
+      automation_level: 0.50
+
+  personnel:
+    deflection:
+      digital_adoption: 0.58

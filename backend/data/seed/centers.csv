@@ -1,0 +1,21 @@
+center_id,center_name,center_type,district,status,headcount,working_hours_per_day
+SC-101,מוקד תמיכה טכנית ארצי,technical_support,hq,active,120,24.0
+SC-102,מוקד כוח אדם – מרכז,personnel,center,active,85,12.0
+SC-103,מוקד לוגיסטיקה צפון,logistics,north,active,46,10.0
+SC-104,מוקד רפואה ארצי,medical,hq,active,96,24.0
+SC-105,מוקד פניות כלליות דרום,general_inquiries,south,active,38,10.0
+SC-106,מוקד תמיכה טכנית צפון,technical_support,north,active,52,12.0
+SC-107,מוקד כוח אדם ירושלים,personnel,jerusalem,active,29,9.0
+SC-108,מוקד לוגיסטיקה דרום,logistics,south,active,61,12.0
+SC-109,מוקד רפואה מרכז,medical,center,active,44,16.0
+SC-110,מוקד פניות כלליות צפון,general_inquiries,north,active,22,9.0
+SC-111,מוקד תמיכה טכנית דרום,technical_support,south,active,67,16.0
+SC-112,מוקד כוח אדם צפון,personnel,north,active,33,10.0
+SC-113,מוקד לוגיסטיקה מרכז,logistics,center,active,78,14.0
+SC-114,מוקד רפואה דרום,medical,south,active,31,12.0
+SC-115,מוקד פניות כלליות מרכז,general_inquiries,center,active,54,12.0
+SC-116,מוקד תמיכה טכנית ירושלים,technical_support,jerusalem,active,26,9.0
+SC-117,"מוקד לוגיסטיקה מטכ""ל",logistics,hq,active,41,12.0
+SC-118,מוקד כוח אדם דרום,personnel,south,active,19,9.0
+SC-119,מוקד רפואה צפון,medical,north,active,24,12.0
+SC-120,מוקד פניות כלליות ירושלים,general_inquiries,jerusalem,active,16,8.0
