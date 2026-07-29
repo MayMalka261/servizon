@@ -9,6 +9,7 @@ stop using it — correctly.
 from __future__ import annotations
 
 import pytest
+from pydantic import ValidationError
 
 from app.domain.enums import Direction, KpiId, LeverId, SimulationTab
 from app.domain.models import BaselineMetrics, Snapshot
@@ -49,9 +50,7 @@ class TestRuleGraph:
             _topological_order(cyclic)
 
     def test_missing_producer_is_rejected(self) -> None:
-        broken = (
-            R.Rule(id="a", label="a", inputs=("nope",), outputs=("x",), fn=lambda ctx: {}),
-        )
+        broken = (R.Rule(id="a", label="a", inputs=("nope",), outputs=("x",), fn=lambda ctx: {}),)
         with pytest.raises(RuleGraphError, match="no rule produces"):
             _topological_order(broken)
 
@@ -75,13 +74,15 @@ class TestDeterminism:
         assert first.waterfall == second.waterfall
         assert first.levers == second.levers
 
-    def test_repeated_runs_are_stable(
-        self, engine: SimulationEngine, snapshot: Snapshot
-    ) -> None:
+    def test_repeated_runs_are_stable(self, engine: SimulationEngine, snapshot: Snapshot) -> None:
         levers = {LeverId.WORKFORCE_CAPACITY: 70.0}
         results = {
-            tuple((k.id, k.scenario) for k in
-                  engine.run(snapshot, CENTER_TYPE, SimulationTab.PHONE_CENTER, dict(levers)).kpis)
+            tuple(
+                (k.id, k.scenario)
+                for k in engine.run(
+                    snapshot, CENTER_TYPE, SimulationTab.PHONE_CENTER, dict(levers)
+                ).kpis
+            )
             for _ in range(15)
         }
         assert len(results) == 1
@@ -98,7 +99,8 @@ class TestDeterminism:
 
 class TestNonMutation:
     def test_snapshot_is_frozen(self, snapshot: Snapshot) -> None:
-        with pytest.raises(Exception):
+        """Immutability is enforced by the type system, not by convention."""
+        with pytest.raises(ValidationError):
             snapshot.baseline.daily_contacts = 1.0  # type: ignore[misc]
 
     def test_baseline_unchanged_after_many_runs(
@@ -152,6 +154,68 @@ class TestBaselineIdentity:
             assert kpi.difference == pytest.approx(0.0, abs=1e-6), kpi.id
         assert result.waterfall == ()
 
+    def test_rounded_defaults_do_not_fabricate_a_change(
+        self, engine: SimulationEngine, baseline: BaselineMetrics
+    ) -> None:
+        """Replaying the displayed defaults must reproduce the current state.
+
+        `lever_defaults` are rounded for display — whole agents, whole seconds.
+        A client that echoes them back (and every saved scenario does, since it
+        stores all levers) must not have those rounded figures fed into the
+        model: near the Erlang C cliff, half an agent is worth points of SLA,
+        and the user sees the tool report a change to a scenario they never
+        touched.
+
+        The baseline here deliberately carries the awkward fractional values
+        real ETL output has, which is exactly what the tidy round numbers in
+        the shared fixture failed to catch.
+        """
+        from datetime import UTC, datetime
+
+        awkward = baseline.model_copy(
+            update={
+                "agents_scheduled": 67.62,
+                "aht_sec": 328.47,
+                "fcr": 0.666403,
+                "digital_adoption": 0.451192,
+                "queue_size": 42.8,
+            }
+        )
+        # Occupancy in the high nineties — the regime where the rounding error
+        # actually bites.
+        awkward = awkward.model_copy(update={"peak_hour_contacts": 690.0})
+
+        rounded_defaults = {
+            LeverId.WORKFORCE_CAPACITY: float(round(awkward.agents_scheduled)),
+            LeverId.AVERAGE_HANDLE_TIME: float(round(awkward.aht_sec)),
+            LeverId.FIRST_CALL_RESOLUTION: round(awkward.fcr * 100, 2),
+            LeverId.DIGITAL_ADOPTION: round(awkward.digital_adoption * 100, 2),
+            LeverId.QUEUE_SIZE: float(round(awkward.queue_size)),
+        }
+
+        rounded_snapshot = Snapshot(
+            id="snap_rounded",
+            center_id="SC-ROUND",
+            captured_at=datetime.now(UTC),
+            baseline=awkward,
+            kpis=(),
+            trend=(),
+            lever_defaults=rounded_defaults,
+            lever_bounds={},
+        )
+
+        result = engine.run(
+            rounded_snapshot,
+            CENTER_TYPE,
+            SimulationTab.PHONE_CENTER,
+            dict(rounded_defaults),
+        )
+
+        for kpi in result.kpis:
+            assert kpi.difference == 0, f"{kpi.id} moved without the user touching anything"
+            assert kpi.trend == 0, kpi.id
+        assert result.waterfall == ()
+
     def test_incoming_calls_matches_observed_volume(
         self, engine: SimulationEngine, snapshot: Snapshot
     ) -> None:
@@ -164,9 +228,7 @@ class TestBaselineIdentity:
 class TestDirectionality:
     """Each lever must move the chain the way the model claims it does."""
 
-    def test_digital_adoption_chain(
-        self, engine: SimulationEngine, snapshot: Snapshot
-    ) -> None:
+    def test_digital_adoption_chain(self, engine: SimulationEngine, snapshot: Snapshot) -> None:
         result = engine.run(
             snapshot, CENTER_TYPE, SimulationTab.PHONE_CENTER, {LeverId.DIGITAL_ADOPTION: 70.0}
         )
@@ -176,9 +238,7 @@ class TestDirectionality:
         assert _kpi(result, KpiId.SLA).difference > 0
         assert _kpi(result, KpiId.CUSTOMER_SATISFACTION).difference > 0
 
-    def test_workforce_capacity_chain(
-        self, engine: SimulationEngine, snapshot: Snapshot
-    ) -> None:
+    def test_workforce_capacity_chain(self, engine: SimulationEngine, snapshot: Snapshot) -> None:
         result = engine.run(
             snapshot, CENTER_TYPE, SimulationTab.PHONE_CENTER, {LeverId.WORKFORCE_CAPACITY: 80.0}
         )
@@ -364,9 +424,7 @@ class TestKpiPresentation:
 
 
 class TestWaterfall:
-    def test_only_moved_levers_appear(
-        self, engine: SimulationEngine, snapshot: Snapshot
-    ) -> None:
+    def test_only_moved_levers_appear(self, engine: SimulationEngine, snapshot: Snapshot) -> None:
         result = engine.run(
             snapshot,
             CENTER_TYPE,

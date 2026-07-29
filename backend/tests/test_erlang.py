@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+from itertools import pairwise
 
 import pytest
 
@@ -27,7 +28,7 @@ class TestErlangB:
 
     def test_blocking_falls_as_servers_are_added(self) -> None:
         values = [erlang_b(n, 10.0) for n in range(1, 25)]
-        assert all(later < earlier for earlier, later in zip(values, values[1:]))
+        assert all(later < earlier for earlier, later in pairwise(values))
 
     def test_stable_at_large_agent_counts(self) -> None:
         """The closed form overflows here; the recursion must not."""
@@ -82,9 +83,7 @@ class TestErlangC:
 class TestSolveQueue:
     def test_known_service_level(self) -> None:
         """100 calls/hr, 180s AHT -> 5 erlangs. 8 agents, 20s target."""
-        outcome = solve_queue(
-            calls_per_hour=100.0, aht_sec=180.0, agents=8.0, sla_target_sec=20.0
-        )
+        outcome = solve_queue(calls_per_hour=100.0, aht_sec=180.0, agents=8.0, sla_target_sec=20.0)
         assert outcome.occupancy == pytest.approx(5.0 / 8.0)
         assert 0.7 < outcome.service_level < 0.95
         assert 0 < outcome.asa_sec < 60
@@ -161,7 +160,7 @@ class TestAbandonment:
 
     def test_rises_with_waiting(self) -> None:
         values = [abandonment_rate(asa_sec=w, patience_sec=180.0) for w in (10, 60, 120, 300)]
-        assert all(later > earlier for earlier, later in zip(values, values[1:]))
+        assert all(later > earlier for earlier, later in pairwise(values))
 
     def test_patience_reduces_abandonment(self) -> None:
         impatient = abandonment_rate(asa_sec=90.0, patience_sec=60.0)

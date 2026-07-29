@@ -18,4 +18,6 @@ def build_repository(settings: Settings) -> ServiceDataRepository:
         return CsvRepository(settings.seed_dir)
     if source == "sql":
         return SqlRepository(settings.database_url)
-    raise ValueError(f"Unknown SERVIZON_DATA_SOURCE={settings.data_source!r}; expected 'csv' or 'sql'")
+    raise ValueError(
+        f"Unknown SERVIZON_DATA_SOURCE={settings.data_source!r}; expected 'csv' or 'sql'"
+    )

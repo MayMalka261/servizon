@@ -58,8 +58,8 @@ def snapshot(baseline: BaselineMetrics) -> Snapshot:
         center_id="SC-TEST",
         captured_at=datetime.now(UTC),
         baseline=baseline,
-        kpis=tuple(),
-        trend=tuple(),
+        kpis=(),
+        trend=(),
         lever_defaults={
             LeverId.DIGITAL_ADOPTION: 45.0,
             LeverId.SELF_SERVICE_RATE: 30.0,

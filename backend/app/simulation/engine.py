@@ -15,6 +15,7 @@ Two properties this module is built to hold, both covered by tests:
 
 from __future__ import annotations
 
+import math
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -226,6 +227,22 @@ def resolve_levers(
         bounds = _effective_bounds(lever_id, snapshot)
         clamped = max(bounds.min, min(bounds.max, float(raw)))
         display[lever_id] = clamped
+
+        # A lever sitting exactly on its default is left out of the model so
+        # the engine reads the precise baseline instead.
+        #
+        # `lever_defaults` are rounded for display — headcount to whole agents,
+        # AHT to whole seconds. Feeding those rounded figures back as a
+        # scenario re-runs the model on inputs that differ slightly from
+        # reality, and near the Erlang C cliff half an agent moves the service
+        # level by points. The visible symptom is a center reporting a change
+        # when the user has touched nothing, which is fatal to trust in the
+        # tool. Saved scenarios store every lever, so this has to be handled
+        # here rather than only by the client sending a partial payload.
+        default = snapshot.lever_defaults.get(lever_id)
+        if default is not None and math.isclose(clamped, default, rel_tol=1e-9, abs_tol=1e-9):
+            continue
+
         model[lever_id] = to_model_units(lever_id, clamped)
 
     return display, model

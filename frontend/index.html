@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light" />
+    <!--
+      Content Security Policy with no external origins. On the target network
+      there is nothing outside to reach, and declaring it here turns a stray
+      CDN reference into a visible console error during development rather
+      than a silent failure after the transfer.
+    -->
+    <!--
+      `worker-src blob:` is here for Vite's dev client, which spawns a blob
+      worker for HMR. No application code creates workers, and the directive
+      that matters — no external origin may be contacted — is untouched.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self'; connect-src 'self' ws: wss:; worker-src 'self' blob:"
+    />
+    <title>Servizon · אופק שירות</title>
+    <meta name="description" content="כלי הדמיה ותמיכה בקבלת החלטות למרכזי שירות" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

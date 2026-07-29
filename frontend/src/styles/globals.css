@@ -1,0 +1,163 @@
+@import './fonts.css';
+@import 'tailwindcss';
+
+/* ---------------------------------------------------------------------------
+   Design tokens.
+
+   Taken from the specification deck: a light interface on a cool grey field,
+   white cards, and a colour per lever family — teal for digital, indigo for
+   workforce, violet for AI. The accent is not decoration; it is how the user
+   knows which family of levers produced the numbers they are looking at.
+--------------------------------------------------------------------------- */
+@theme {
+  --font-sans: 'Heebo', 'Segoe UI', system-ui, -apple-system, sans-serif;
+
+  /* Surfaces */
+  --color-canvas: #eef2f5;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f6f8fa;
+  --color-surface-sunken: #eaeff3;
+
+  /* Command bar — the dark band across the top of every screen in the deck */
+  --color-header: #1d3b4f;
+  --color-header-soft: #274c63;
+
+  /* Text */
+  --color-ink: #16283a;
+  --color-ink-soft: #4a5f72;
+  --color-ink-muted: #7b8fa1;
+  --color-ink-inverse: #ffffff;
+
+  /* Structure */
+  --color-line: #dde5ec;
+  --color-line-strong: #c4d1dc;
+
+  /* Lever families */
+  --color-brand: #17918a;
+  --color-brand-soft: #e2f4f2;
+  --color-brand-strong: #0f6f69;
+
+  --color-digital: #3b82c4;
+  --color-digital-soft: #e4eff9;
+
+  --color-workforce: #5866c4;
+  --color-workforce-soft: #e8eaf9;
+
+  --color-ai: #7c5cbf;
+  --color-ai-soft: #efe9fa;
+
+  /* KPI semantics */
+  --color-positive: #12855a;
+  --color-positive-soft: #e0f5ec;
+  --color-negative: #c53a52;
+  --color-negative-soft: #fce8ec;
+  --color-warning: #c17d1a;
+  --color-warning-soft: #fdf1dd;
+  --color-critical: #b02a37;
+  --color-critical-soft: #fbe4e6;
+  --color-neutral: #64798c;
+  --color-neutral-soft: #eef2f5;
+
+  /* Elevation. Deliberately soft — a dashboard full of hard drop shadows
+     reads as clutter once there are twelve cards on screen. */
+  --shadow-card: 0 1px 2px rgb(22 40 58 / 0.05), 0 1px 3px rgb(22 40 58 / 0.04);
+  --shadow-raised: 0 4px 12px rgb(22 40 58 / 0.08), 0 1px 3px rgb(22 40 58 / 0.05);
+  --shadow-overlay: 0 16px 40px rgb(22 40 58 / 0.16);
+
+  --radius-card: 0.75rem;
+}
+
+/* ---------------------------------------------------------------------------
+   Base
+--------------------------------------------------------------------------- */
+@layer base {
+  * {
+    border-color: var(--color-line);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-feature-settings: 'tnum';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Numbers must not reflow as they animate. Tabular figures everywhere a
+     value can change under the user's cursor. */
+  .tnum {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Latin runs — SLA, AHT, FCR, AI — inside Hebrew text. Without this the
+     bidi algorithm reorders acronyms mid-sentence. */
+  .ltr {
+    direction: ltr;
+    unicode-bidi: isolate;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-line-strong);
+    border-radius: 999px;
+    border: 2px solid var(--color-canvas);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-ink-muted);
+  }
+}
+
+@layer components {
+  .card {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+  }
+
+  /* The coloured rule along the top edge of every KPI card in the deck. */
+  .card-accent {
+    position: relative;
+    overflow: hidden;
+  }
+  .card-accent::before {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    top: 0;
+    height: 3px;
+    background: var(--accent, var(--color-brand));
+  }
+}
+
+@layer utilities {
+  /* Respect the user's motion preference. A simulation screen animates a lot
+     of numbers; for anyone with vestibular sensitivity that is not a nicety. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}

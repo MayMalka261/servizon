@@ -88,9 +88,7 @@ class TestSnapshot:
         second = client.get(f"/api/centers/{center_id}/snapshot").json()["id"]
         assert first == second
 
-    def test_dynamic_bounds_bracket_the_default(
-        self, client: TestClient, center_id: str
-    ) -> None:
+    def test_dynamic_bounds_bracket_the_default(self, client: TestClient, center_id: str) -> None:
         snap = client.get(f"/api/centers/{center_id}/snapshot").json()
         bounds = snap["lever_bounds"]["workforce_capacity"]
         default = snap["lever_defaults"]["workforce_capacity"]
@@ -257,8 +255,37 @@ class TestScenarios:
         # All columns share one snapshot, so the comparison is apples to apples.
         assert result["snapshot_id"]
 
+        # Metrics with a healthy band rather than a direction get no winner —
+        # otherwise the table crowns a scenario for being idle, contradicting
+        # its own footnote.
+        assert "occupancy" not in result["winners"]
+        assert "utilization" not in result["winners"]
+
         for scenario_id in ids:
             client.delete(f"/api/scenarios/{scenario_id}")
+
+    def test_hebrew_names_survive_a_round_trip(self, client: TestClient, center_id: str) -> None:
+        """Every visible string in this application is Hebrew."""
+        name = "תרחיש עברית · בדיקה"
+        created = client.post(
+            "/api/scenarios",
+            json={
+                "center_id": center_id,
+                "name": name,
+                "tab": "phone_center",
+                "levers": {"digital_adoption": 60},
+            },
+        ).json()
+
+        assert created["name"] == name
+        reloaded = next(
+            s
+            for s in client.get("/api/scenarios", params={"center_id": center_id}).json()
+            if s["id"] == created["id"]
+        )
+        assert reloaded["name"] == name
+
+        client.delete(f"/api/scenarios/{created['id']}")
 
     def test_compare_rejects_empty_selection(self, client: TestClient, center_id: str) -> None:
         response = client.post(

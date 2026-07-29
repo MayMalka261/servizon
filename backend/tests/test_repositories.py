@@ -19,8 +19,8 @@ from app.repositories.schema import (
     TABLE_CENTERS,
     TABLE_CHANNELS,
     TABLE_INTERACTIONS,
-    TABLE_STAFFING,
     TABLE_SCHEMAS,
+    TABLE_STAFFING,
 )
 from app.repositories.sql_repo import SqlRepository
 from app.services.etl import build_dataset
@@ -59,9 +59,7 @@ def sql_repo(tmp_path_factory) -> SqlRepository:
 
 class TestContract:
     @pytest.mark.parametrize("table", sorted(TABLE_SCHEMAS))
-    def test_csv_satisfies_the_declared_schema(
-        self, csv_repo: CsvRepository, table: str
-    ) -> None:
+    def test_csv_satisfies_the_declared_schema(self, csv_repo: CsvRepository, table: str) -> None:
         loader = {
             TABLE_CENTERS: csv_repo.load_centers,
             TABLE_INTERACTIONS: csv_repo.load_interactions,

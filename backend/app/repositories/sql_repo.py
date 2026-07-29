@@ -14,6 +14,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
 
 from app.repositories.base import ServiceDataRepository
+from app.repositories.csv_repo import _coerce
 from app.repositories.schema import (
     CENTERS_COLUMNS,
     CHANNELS_COLUMNS,
@@ -24,7 +25,6 @@ from app.repositories.schema import (
     TABLE_INTERACTIONS,
     TABLE_STAFFING,
 )
-from app.repositories.csv_repo import _coerce
 
 
 class SqlRepository(ServiceDataRepository):
@@ -39,7 +39,7 @@ class SqlRepository(ServiceDataRepository):
 
     def _read(self, table: str, columns: dict[str, str]) -> pd.DataFrame:
         column_list = ", ".join(columns)
-        query = f"SELECT {column_list} FROM {self._qualified(table)}"  # noqa: S608
+        query = f"SELECT {column_list} FROM {self._qualified(table)}"
         # Table and column names come from `schema.py` constants, never user
         # input, so there is no injection surface here.
         with self._engine.connect() as connection:
@@ -62,6 +62,6 @@ class SqlRepository(ServiceDataRepository):
         try:
             with self._engine.connect() as connection:
                 connection.execute(text("SELECT 1"))
-        except Exception:  # noqa: BLE001 - health probe must never raise
+        except Exception:
             return False
         return True

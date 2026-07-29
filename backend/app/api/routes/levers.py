@@ -26,12 +26,8 @@ def list_levers(tab: SimulationTab | None = None) -> list[LeverDefinition]:
 @router.get("/metadata", summary="Tabs, lever groups and KPI definitions")
 def metadata() -> dict[str, object]:
     return {
-        "tabs": [
-            {"value": tab.value, "label": label} for tab, label in TAB_LABELS.items()
-        ],
-        "lever_groups": [
-            {"value": group, "label": GROUP_LABELS[group]} for group in GROUP_ORDER
-        ],
+        "tabs": [{"value": tab.value, "label": label} for tab, label in TAB_LABELS.items()],
+        "lever_groups": [{"value": group, "label": GROUP_LABELS[group]} for group in GROUP_ORDER],
         "kpis": [
             {
                 "id": kpi.id.value,

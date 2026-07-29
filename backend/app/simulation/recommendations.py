@@ -66,7 +66,7 @@ def build_recommendations(
     found.extend(_headline(indexed, moved_levers))
     found.extend(_capacity_warnings(indexed, scenario_values, baseline))
     found.extend(_target_checks(indexed, baseline, levers))
-    found.extend(_staffing_gap(indexed, baseline))
+    found.extend(_staffing_gap(indexed, baseline, levers))
 
     order = {
         Severity.CRITICAL: 0,
@@ -95,7 +95,9 @@ def _headline(
         key=lambda item: abs(item[1][1] - item[1][0]),
         reverse=True,
     )[:2]
-    phrases = [_format_lever_delta(lever_id, before, after) for lever_id, (before, after) in described]
+    phrases = [
+        _format_lever_delta(lever_id, before, after) for lever_id, (before, after) in described
+    ]
     subject = " ו".join(phrases) if len(phrases) > 1 else phrases[0]
 
     effects: list[str] = []
@@ -230,13 +232,19 @@ def _target_checks(
 def _staffing_gap(
     indexed: dict[KpiId, SimulatedKpi],
     baseline: BaselineMetrics,
+    levers: dict[LeverId, float],
 ) -> list[Recommendation]:
     required = indexed.get(KpiId.REQUIRED_AGENTS)
     if required is None:
         return []
 
-    current_scheduled = baseline.agents_scheduled
-    gap = required.scenario - current_scheduled
+    # Compare against the roster *in the scenario*, not today's. A user who
+    # has just added fifteen agents must not be told they are six short —
+    # that contradicts the other recommendations on the same screen and makes
+    # the whole panel look unreliable.
+    scheduled = levers.get(LeverId.WORKFORCE_CAPACITY, baseline.agents_scheduled)
+
+    gap = required.scenario - scheduled
     if abs(gap) < 1:
         return []
 
@@ -248,7 +256,7 @@ def _staffing_gap(
                 title=f"חסרים כ-{_format_number(gap)} נציגים בשעת השיא",
                 body=(
                     f"כדי לעמוד ביעדי השירות בתרחיש זה נדרשת מצבת של {_format_number(required.scenario)} "
-                    f"נציגים בשעת השיא, מול {_format_number(current_scheduled)} כיום."
+                    f"נציגים בשעת השיא, מול {_format_number(scheduled)} בתרחיש הנוכחי."
                 ),
             )
         ]
@@ -260,7 +268,7 @@ def _staffing_gap(
             title=f"התפנו כ-{_format_number(abs(gap))} תקנים",
             body=(
                 f"התרחיש מאפשר לעמוד ביעדים עם {_format_number(required.scenario)} נציגים בשעת השיא "
-                f"במקום {_format_number(current_scheduled)} — פער שניתן להסיט למוקדים בעומס."
+                f"במקום {_format_number(scheduled)} — פער שניתן להסיט למוקדים בעומס."
             ),
         )
     ]

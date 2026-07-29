@@ -12,7 +12,7 @@ import uuid
 from datetime import UTC, datetime
 
 from sqlalchemy import DateTime, String, Text, create_engine, select
-from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sessionmaker
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 
 from app.domain.enums import LeverId, SimulationTab
 from app.domain.models import Scenario, ScenarioCreate, ScenarioUpdate

@@ -1,0 +1,43 @@
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "C4", "SIM", "RUF"]
+ignore = [
+    # Long lines in Hebrew user-facing strings; breaking them hurts readability
+    # more than it helps.
+    "E501",
+    # `Depends(...)` in a parameter default is the FastAPI idiom, not a bug.
+    "B008",
+    # Flags Hebrew letters as "ambiguous unicode" against Latin lookalikes.
+    # Every user-facing string in this application is Hebrew, so this fires on
+    # correct code only.
+    "RUF001",
+    "RUF002",
+    "RUF003",
+    # `from app.simulation import rules as R` — the value-key constants are
+    # referenced constantly (R.V_ASA, R.V_SLA) and the short alias keeps the
+    # rule graph readable.
+    "N812",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101"]
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+ignore_missing_imports = true
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+filterwarnings = ["error::DeprecationWarning:app.*"]

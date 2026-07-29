@@ -51,7 +51,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     scheduler.start()
     app.state.scheduler = scheduler
 
-    log.info("startup_complete", data_source=repository.name, centers=len(store.current().centers) if store.is_ready else 0)
+    log.info(
+        "startup_complete",
+        data_source=repository.name,
+        centers=len(store.current().centers) if store.is_ready else 0,
+    )
 
     try:
         yield

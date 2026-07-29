@@ -109,9 +109,7 @@ def compare_scenarios(
             tab=scenario.tab,
             requested_levers=scenario.levers,
         )
-        columns.append(
-            CompareColumn(scenario_id=scenario.id, name=scenario.name, kpis=result.kpis)
-        )
+        columns.append(CompareColumn(scenario_id=scenario.id, name=scenario.name, kpis=result.kpis))
 
     if not columns:
         raise HTTPException(
@@ -128,10 +126,18 @@ def compare_scenarios(
 
 
 def _winners(columns: list[CompareColumn]) -> dict[KpiId, str]:
-    """Best scenario per KPI, respecting each metric's desirable direction."""
+    """Best scenario per KPI, respecting each metric's desirable direction.
+
+    Metrics with no desirable direction get no winner. Occupancy is the case
+    in point: it has a healthy band, so crowning the lowest one would recommend
+    an idle center, and crowning the highest would recommend burning agents
+    out. Neither is a result worth marking.
+    """
     best: dict[KpiId, tuple[str, float]] = {}
     for column in columns:
         for kpi in column.kpis:
+            if kpi.direction is Direction.NEUTRAL:
+                continue
             current = best.get(kpi.id)
             if current is None or _beats(kpi, current[1]):
                 best[kpi.id] = (column.scenario_id, kpi.scenario)

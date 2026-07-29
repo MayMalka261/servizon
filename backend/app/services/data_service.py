@@ -58,7 +58,7 @@ class DataService:
                 channels=channels,
                 coefficients_for=self._engine.coefficients_for,
             )
-        except Exception as exc:  # noqa: BLE001 - refresh must never crash the app
+        except Exception as exc:
             log.error("refresh_failed", error=str(exc), source=self._repository.name)
             self._store.record_failure(str(exc))
             return None

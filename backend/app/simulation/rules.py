@@ -27,13 +27,13 @@ from dataclasses import dataclass, field
 from typing import Final
 
 from app.domain.enums import LeverId
+from app.domain.models import BaselineMetrics
 from app.simulation.coefficients import Coefficients
 from app.simulation.erlang import (
     abandonment_rate,
     required_agents,
     solve_queue,
 )
-from app.domain.models import BaselineMetrics
 
 # --- value keys -----------------------------------------------------------
 # Intermediate values flowing between rules. Kept as constants so a typo is a
@@ -119,9 +119,10 @@ def _rule_effective_aht(ctx: RuleContext) -> dict[str, float]:
     d_agent_ai = agent_ai - ctx.baseline.agent_ai_usage
     d_kb = kb - ctx.baseline.knowledge_base_quality
 
-    reduction = d_agent_ai * ctx.coefficients.aht["agent_ai"] + d_kb * ctx.coefficients.aht[
-        "knowledge_base_quality"
-    ]
+    reduction = (
+        d_agent_ai * ctx.coefficients.aht["agent_ai"]
+        + d_kb * ctx.coefficients.aht["knowledge_base_quality"]
+    )
     effective = base * (1.0 - _clamp(reduction, -0.6, 0.6))
     return {V_EFFECTIVE_AHT: max(effective, 15.0)}
 
@@ -135,9 +136,10 @@ def _rule_effective_fcr(ctx: RuleContext) -> dict[str, float]:
     d_agent_ai = agent_ai - ctx.baseline.agent_ai_usage
     d_kb = kb - ctx.baseline.knowledge_base_quality
 
-    gain = d_agent_ai * ctx.coefficients.fcr["agent_ai"] + d_kb * ctx.coefficients.fcr[
-        "knowledge_base_quality"
-    ]
+    gain = (
+        d_agent_ai * ctx.coefficients.fcr["agent_ai"]
+        + d_kb * ctx.coefficients.fcr["knowledge_base_quality"]
+    )
     return {V_EFFECTIVE_FCR: _clamp(base + gain, 0.10, 0.99)}
 
 

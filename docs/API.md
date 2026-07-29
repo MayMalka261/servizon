@@ -1,0 +1,177 @@
+# API
+
+בסיס: `/api` · תיעוד אינטראקטיבי: `/api/docs`
+
+כל התשובות ב-JSON, UTF-8. שדות אחוז מוחזרים כ**שברים בטווח [0,1]**; משכי זמן
+בשניות. הלקוח מפרמט — כך אותו ערך מוצג באותה צורה בכרטיס, בגרף ובטבלה.
+
+---
+
+## מוקדים
+
+### `GET /api/centers`
+
+רשימת מוקדים, מסוננת בצד השרת. ממוינת לפי נפח יורד.
+
+| פרמטר | ערכים |
+|---|---|
+| `search` | טקסט חופשי — שם או מזהה |
+| `center_type` | `technical_support` · `personnel` · `logistics` · `medical` · `general_inquiries` |
+| `district` | `north` · `center` · `south` · `jerusalem` · `hq` |
+| `status` | `active` · `strained` · `critical` · `offline` |
+| `size` | `small` · `medium` · `large` |
+
+ערך לא חוקי מחזיר `422`.
+
+### `GET /api/centers/filters`
+
+ערכי הסינון עם תוויות בעברית. ה-UI לא מחזיק טבלת תרגום.
+
+### `GET /api/centers/{id}`
+
+מוקד בודד. `404` אם אינו קיים.
+
+### `GET /api/centers/{id}/snapshot`
+
+הבסיס החי שמולו רצה הסימולציה.
+
+```jsonc
+{
+  "id": "snap_SC-111_a3f9c2e81b40",
+  "center_id": "SC-111",
+  "captured_at": "2026-07-29T20:32:00Z",
+  "baseline": { "daily_contacts": 3796.4, "aht_sec": 328.5, /* … */ },
+  "kpis": [ { "id": "sla", "label": "עמידה ב-SLA", "value": 0.496, /* … */ } ],
+  "trend": [ { "label": "30/06", "value": 3812.4 } ],
+  "lever_defaults": { "digital_adoption": 45.0, "workforce_capacity": 68.0 },
+  "lever_bounds": { "workforce_capacity": { "min": 27, "max": 169, "step": 1 } }
+}
+```
+
+`id` נגזר מהתוכן. רענון שלא שינה נתונים מחזיר את אותו מזהה, כך שתרחיש פתוח אינו
+מסומן כמיושן ללא סיבה.
+
+`lever_defaults` **מעוגלים לתצוגה**. הם אינם הקלט המדויק של המודל — ראה
+`POST /api/simulate`.
+
+---
+
+## מטא-נתונים
+
+### `GET /api/levers`
+
+רישום המנופים: תוויות, טווחים, צעדים, tooltips ובאילו טאבים הם מופיעים.
+פרמטר `tab` מסנן. הגבולות מגיעים מהשרת כדי שה-UI לא יוכל לצאת מהטווח שהמודל
+יודע לחשב.
+
+### `GET /api/metadata`
+
+טאבים, קבוצות מנופים והגדרות KPI במקבץ אחד.
+
+---
+
+## סימולציה
+
+### `POST /api/simulate`
+
+```jsonc
+{
+  "center_id": "SC-111",
+  "tab": "phone_center",
+  "levers": { "workforce_capacity": 82 },
+  "snapshot_id": "snap_SC-111_a3f9c2e81b40"   // אופציונלי
+}
+```
+
+**שלחו רק את המנופים שהמשתמש הזיז.** מנוף שאינו בבקשה נופל חזרה לערך הבסיס
+המדויק. שליחת ערכי ברירת המחדל המעוגלים חזרה הייתה מזינה למודל קלט מעוגל במקום
+את המציאות — וליד הצוק של Erlang זה שווה נקודות SLA. השרת מגן על כך גם בעצמו:
+מנוף שערכו זהה לברירת המחדל מושמט מהחישוב.
+
+התשובה:
+
+```jsonc
+{
+  "levers": { "workforce_capacity": 82 },      // אחרי הצמדה לגבולות
+  "kpis": [{
+    "id": "sla", "label": "עמידה ב-SLA", "format": "percent",
+    "direction": "higher_is_better",
+    "current": 0.496, "scenario": 0.993,
+    "difference": 0.497, "percentage": 100.2,
+    "trend": 1, "is_improvement": true
+  }],
+  "recommendations": [ { "severity": "positive", "title": "…", "body": "…" } ],
+  "waterfall": [ { "lever": "digital_adoption", "contribution": -353.1 } ],
+  "snapshot_changed": false
+}
+```
+
+- ערך מחוץ לטווח **מוצמד ולא נדחה**, ומוחזר ב-`levers` כדי שה-UI יתקן את הסליידר.
+- מנוף לא מוכר או שדה עודף מחזירים `422`.
+- `direction: "neutral"` מציין מדד עם טווח תקין ולא כיוון עדיף (תפוסה, ניצולת).
+  עבורו `is_improvement` תמיד `false` ואין לצבוע את הדלתא.
+- `snapshot_changed: true` פירושו שהבסיס זז מאז שהלקוח טען אותו. **התרחיש עדיין
+  חושב** — מול הבסיס החדש. עבודת המשתמש לעולם אינה נזרקת.
+
+---
+
+## תרחישים
+
+| Method | Path | תיאור |
+|---|---|---|
+| `GET` | `/api/scenarios?center_id=…` | תרחישים שמורים למוקד |
+| `POST` | `/api/scenarios` | שמירה. `409` במגבלת 12 למוקד |
+| `PATCH` | `/api/scenarios/{id}` | עדכון שם / מנופים / הערות |
+| `DELETE` | `/api/scenarios/{id}` | `204` בהצלחה |
+| `POST` | `/api/scenarios/compare` | השוואה |
+
+### `POST /api/scenarios/compare`
+
+```jsonc
+{ "center_id": "SC-111", "scenario_ids": ["scn_a1b2", "scn_c3d4"] }
+```
+
+כל התרחישים מחושבים מול **Snapshot אחד** בבקשה אחת. חישוב נפרד לכל אחד היה
+עלול לחצות רענון רקע ולהשוות בשקט תרחישים שנבנו על בסיסים שונים — תוצאה שנראית
+תקינה ואינה נכונה.
+
+`winners` ממפה KPI לתרחיש המוביל בו. מדדים ניטרליים **אינם מופיעים** במפה:
+הכתרת התפוסה הנמוכה ביותר הייתה ממליצה על מוקד מבוטל.
+
+---
+
+## מצב המערכת
+
+### `GET /api/health`
+
+```jsonc
+{
+  "status": "ok",              // ok · degraded · starting
+  "data_source": "csv",
+  "centers_loaded": 20,
+  "last_refresh": "2026-07-29T20:32:00Z",
+  "next_refresh": "2026-07-29T20:35:00Z",
+  "refresh_minutes": 3
+}
+```
+
+`degraded` פירושו שהרענון האחרון נכשל אך הדור הקודם ממשיך לשרת.
+
+### `POST /api/refresh`
+
+טעינה מיידית. אינו מאפס דבר בצד הלקוח — תרחיש פתוח שומר על ערכי המנופים
+ומחושב מחדש.
+
+---
+
+## שגיאות
+
+| קוד | מתי |
+|---|---|
+| `404` | מוקד או תרחיש לא נמצא |
+| `409` | חריגה ממגבלת התרחישים |
+| `422` | ולידציה — ערך enum לא חוקי, מנוף לא מוכר, שדה עודף |
+| `503` | הרענון הראשון עדיין רץ |
+| `500` | שגיאה בלתי צפויה. הודעה גנרית בעברית; ה-trace בלוג המקומי בלבד |
+
+שדה `detail` נושא הודעה בעברית שניתן להציג למשתמש כפי שהיא.

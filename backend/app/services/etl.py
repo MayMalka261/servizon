@@ -280,9 +280,7 @@ def _build_baseline(
     phone = interactions[interactions["channel"] == ChannelKind.PHONE.value]
     phone_offered = phone["offered"].fillna(0.0) if not phone.empty else pd.Series(dtype="float64")
 
-    aht_sec = _weighted_mean(
-        interactions["aht_sec"].fillna(0.0), offered, default=300.0
-    )
+    aht_sec = _weighted_mean(interactions["aht_sec"].fillna(0.0), offered, default=300.0)
     observed_wait = (
         _weighted_mean(phone["wait_sec"].fillna(0.0), phone_offered, default=60.0)
         if not phone.empty
@@ -300,7 +298,9 @@ def _build_baseline(
 
     # Digital adoption is the share of contacts arriving on a non-phone channel.
     digital_names = {c.value for c in DIGITAL_CHANNELS}
-    digital_offered = float(interactions[interactions["channel"].isin(digital_names)]["offered"].sum())
+    digital_offered = float(
+        interactions[interactions["channel"].isin(digital_names)]["offered"].sum()
+    )
     total_offered = float(offered.sum())
     digital_adoption = digital_offered / total_offered if total_offered > 0 else 0.0
 
@@ -390,7 +390,11 @@ def _channel_config(channels: pd.DataFrame, interactions: pd.DataFrame) -> dict[
         active["weight"] = 1.0
 
     return {
-        key: float(np.clip(_weighted_mean(active[key].fillna(default), active["weight"], default), 0.0, 1.0))
+        key: float(
+            np.clip(
+                _weighted_mean(active[key].fillna(default), active["weight"], default), 0.0, 1.0
+            )
+        )
         for key, default in defaults.items()
     }
 

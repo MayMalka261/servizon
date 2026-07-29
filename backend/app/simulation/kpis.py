@@ -28,10 +28,20 @@ _PHONE = (SimulationTab.PHONE_CENTER,)
 
 KPI_DEFINITIONS: tuple[KpiDefinition, ...] = (
     KpiDefinition(
-        KpiId.INCOMING_CALLS, "נפח שיחות נכנסות", KpiFormat.NUMBER, Direction.LOWER_IS_BETTER, _BOTH, 10
+        KpiId.INCOMING_CALLS,
+        "נפח שיחות נכנסות",
+        KpiFormat.NUMBER,
+        Direction.LOWER_IS_BETTER,
+        _BOTH,
+        10,
     ),
     KpiDefinition(
-        KpiId.ABANDONMENT_RATE, "שיעור נטישה", KpiFormat.PERCENT, Direction.LOWER_IS_BETTER, _BOTH, 20
+        KpiId.ABANDONMENT_RATE,
+        "שיעור נטישה",
+        KpiFormat.PERCENT,
+        Direction.LOWER_IS_BETTER,
+        _BOTH,
+        20,
     ),
     KpiDefinition(
         KpiId.AVERAGE_WAITING_TIME,
@@ -67,7 +77,12 @@ KPI_DEFINITIONS: tuple[KpiDefinition, ...] = (
         KpiId.UTILIZATION, "ניצולת משמרת", KpiFormat.PERCENT, Direction.NEUTRAL, _PHONE, 90
     ),
     KpiDefinition(
-        KpiId.QUEUE_LENGTH, "אורך תור ממוצע", KpiFormat.NUMBER, Direction.LOWER_IS_BETTER, _PHONE, 100
+        KpiId.QUEUE_LENGTH,
+        "אורך תור ממוצע",
+        KpiFormat.NUMBER,
+        Direction.LOWER_IS_BETTER,
+        _PHONE,
+        100,
     ),
     KpiDefinition(
         KpiId.REQUIRED_AGENTS,
@@ -78,7 +93,12 @@ KPI_DEFINITIONS: tuple[KpiDefinition, ...] = (
         110,
     ),
     KpiDefinition(
-        KpiId.DIGITAL_ADOPTION, "אימוץ דיגיטלי", KpiFormat.PERCENT, Direction.HIGHER_IS_BETTER, _BOTH, 120
+        KpiId.DIGITAL_ADOPTION,
+        "אימוץ דיגיטלי",
+        KpiFormat.PERCENT,
+        Direction.HIGHER_IS_BETTER,
+        _BOTH,
+        120,
     ),
     KpiDefinition(
         KpiId.AI_USAGE, "שימוש ב-AI", KpiFormat.PERCENT, Direction.HIGHER_IS_BETTER, _BOTH, 130
