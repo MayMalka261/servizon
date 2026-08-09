@@ -3,6 +3,7 @@ import { Activity, RefreshCw } from 'lucide-react'
 
 import { useHealth } from '@/hooks/useCenters'
 import { formatTime } from '@/simulation/format'
+import { ThemeToggle } from './ThemeToggle'
 import { cn } from '@/lib/utils'
 
 /**
@@ -24,10 +25,16 @@ export function AppHeader() {
         : 'bg-[var(--color-neutral)]'
 
   return (
-    <header className="sticky top-0 z-40 border-b border-white/10 bg-[var(--color-header)]">
+    <header className="glass-bar sticky top-0 z-40 border-b border-white/10">
+      {/* Hairline of accent along the bottom edge — reads as a status strip on
+          a command bar, and stops the header floating free of the page. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-l from-transparent via-[var(--color-brand)]/45 to-transparent"
+      />
       <div className="mx-auto flex h-16 max-w-[1800px] items-center justify-between gap-4 px-4 sm:px-6">
-        <Link to="/" className="flex items-center gap-3 min-w-0">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--color-brand)]">
+        <Link to="/" className="group flex items-center gap-3 min-w-0">
+          <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--color-brand)] shadow-[0_0_20px_-4px_var(--color-brand)] transition-transform duration-[var(--duration-base)] ease-[var(--ease-out-soft)] group-hover:scale-105">
             <Activity className="h-5 w-5 text-white" strokeWidth={2.5} />
           </div>
           <div className="min-w-0">
@@ -55,11 +62,15 @@ export function AppHeader() {
             className="flex items-center gap-2 rounded-lg bg-white/5 px-3 py-1.5"
             title={`מקור נתונים: ${health?.data_source ?? '—'}`}
           >
-            <span className={cn('h-2 w-2 rounded-full', tone)} />
+            {/* The ring pulses only while data is actually flowing, so it
+                reads as a heartbeat rather than as decoration. */}
+            <span className={cn('relative h-2 w-2 rounded-full', tone, state === 'ok' && 'pulse-ring')} />
             <span className="text-xs font-medium text-white/80">
               {health?.centers_loaded ?? 0} מוקדים
             </span>
           </div>
+
+          <ThemeToggle />
         </div>
       </div>
     </header>

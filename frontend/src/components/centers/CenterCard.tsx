@@ -14,7 +14,15 @@ function slaTone(slaPct: number): string {
   return 'text-[var(--color-critical)]'
 }
 
-export function CenterCard({ center }: { center: ServiceCenter }) {
+/** Status drives the card's edge colour, so a grid reads as a heat map. */
+const STATUS_ACCENT: Record<ServiceCenter['status'], string> = {
+  active: 'var(--color-positive)',
+  strained: 'var(--color-warning)',
+  critical: 'var(--color-critical)',
+  offline: 'var(--color-neutral)',
+}
+
+export function CenterCard({ center, index = 0 }: { center: ServiceCenter; index?: number }) {
   const status = STATUS_STYLES[center.status]
 
   return (
@@ -23,10 +31,16 @@ export function CenterCard({ center }: { center: ServiceCenter }) {
       className="group block h-full focus-visible:outline-none"
       aria-label={`פתיחת מרכז סימולציה עבור ${center.name}`}
     >
-      <Card className="flex h-full flex-col p-5 transition-all group-hover:-translate-y-0.5 group-hover:shadow-[var(--shadow-raised)] group-focus-visible:ring-2 group-focus-visible:ring-[var(--color-brand)]">
+      <Card
+        accent={STATUS_ACCENT[center.status]}
+        style={{ ['--i' as string]: index }}
+        className="card-interactive animate-rise flex h-full flex-col p-5 group-focus-visible:ring-2 group-focus-visible:ring-[var(--color-brand)]"
+      >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <h3 className="truncate font-semibold text-[var(--color-ink)]">{center.name}</h3>
+            <h3 className="truncate font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
+              {center.name}
+            </h3>
             <p className="mt-0.5 text-xs text-[var(--color-ink-muted)]">
               <span className="ltr">{center.id}</span> · {center.center_type_label} ·{' '}
               {center.district_label}
@@ -89,7 +103,12 @@ function Metric({
         {icon}
         <span className="text-[11px]">{label}</span>
       </div>
-      <p className={cn('tnum mt-1 text-lg font-semibold', valueClassName ?? 'text-[var(--color-ink)]')}>
+      <p
+        className={cn(
+          'tnum mt-1 text-xl font-semibold tracking-[-0.015em]',
+          valueClassName ?? 'text-[var(--color-ink)]',
+        )}
+      >
         {value}
       </p>
     </div>

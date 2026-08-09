@@ -49,6 +49,16 @@ export function GaugeChart({
       height={170}
     >
       <div className="relative h-full">
+        {/* Bloom behind the arc. Scaled by --glow-strength, which is 0 in the
+            light theme — on a white card a glow reads as a printing error. */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-[62%]"
+          style={{
+            background: `radial-gradient(58% 100% at 50% 100%, ${colour}, transparent 70%)`,
+            opacity: `calc(0.22 * var(--glow-strength))`,
+          }}
+        />
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
@@ -62,6 +72,7 @@ export function GaugeChart({
               innerRadius="72%"
               outerRadius="100%"
               stroke="none"
+              cornerRadius={4}
               isAnimationActive={false}
             >
               <Cell fill={colour} />
@@ -74,10 +85,16 @@ export function GaugeChart({
           dir="rtl"
           className="pointer-events-none absolute inset-x-0 bottom-1 flex flex-col items-center"
         >
-          <span className="tnum text-2xl font-bold" style={{ color: colour }}>
+          <span
+            className="tnum text-[1.75rem] font-bold leading-none tracking-[-0.02em]"
+            style={{
+              color: colour,
+              textShadow: `0 0 calc(22px * var(--glow-strength)) ${colour}`,
+            }}
+          >
             {formatPercent(value)}
           </span>
-          <span className="text-[11px] text-[var(--color-ink-muted)]">
+          <span className="mt-1 text-[11px] text-[var(--color-ink-muted)]">
             {value >= target ? 'עומד ביעד' : `חסר ${formatPercent(target - value)} ליעד`}
           </span>
         </div>

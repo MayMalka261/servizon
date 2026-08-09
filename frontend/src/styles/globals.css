@@ -4,10 +4,14 @@
 /* ---------------------------------------------------------------------------
    Design tokens.
 
-   Taken from the specification deck: a light interface on a cool grey field,
-   white cards, and a colour per lever family — teal for digital, indigo for
-   workforce, violet for AI. The accent is not decoration; it is how the user
-   knows which family of levers produced the numbers they are looking at.
+   Two complete palettes. Light follows the specification deck; dark follows the
+   written brief's command-centre direction. Every component reads semantic
+   names only — `--color-surface`, never a hex — so switching themes is a
+   single attribute on <html> and nothing downstream needs to know.
+
+   Accent colour per lever family — teal for digital, indigo for workforce,
+   violet for AI — is not decoration. It is how the user knows which family of
+   levers produced the numbers in front of them.
 --------------------------------------------------------------------------- */
 @theme {
   --font-sans: 'Heebo', 'Segoe UI', system-ui, -apple-system, sans-serif;
@@ -62,13 +66,130 @@
   --color-neutral: #64798c;
   --color-neutral-soft: #eef2f5;
 
-  /* Elevation. Deliberately soft — a dashboard full of hard drop shadows
-     reads as clutter once there are twelve cards on screen. */
+  /* Elevation. Tinted with the ink hue rather than pure black — a neutral
+     grey shadow on a cool surface reads as dirt. Deliberately soft: a
+     dashboard of twelve cards with hard drop shadows is clutter. */
   --shadow-card: 0 1px 2px rgb(22 40 58 / 0.05), 0 1px 3px rgb(22 40 58 / 0.04);
   --shadow-raised: 0 4px 12px rgb(22 40 58 / 0.08), 0 1px 3px rgb(22 40 58 / 0.05);
+  --shadow-lift: 0 10px 24px rgb(22 40 58 / 0.1), 0 2px 6px rgb(22 40 58 / 0.06);
   --shadow-overlay: 0 16px 40px rgb(22 40 58 / 0.16);
 
   --radius-card: 0.75rem;
+
+  /* Motion. One duration scale, one easing, so nothing feels out of step. */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-fast: 150ms;
+  --duration-base: 240ms;
+  --duration-slow: 380ms;
+}
+
+/* ---------------------------------------------------------------------------
+   Light — ambient depth.
+
+   Two very faint radial washes stop the canvas reading as flat grey card
+   stock. They sit far enough apart that neither is legible as a "blob".
+--------------------------------------------------------------------------- */
+:root {
+  color-scheme: light;
+  /* Colour transition on the root as well, so the canvas dims with the rest
+     of the interface rather than snapping a frame ahead of it. */
+  transition: background-color var(--duration-slow) var(--ease-out-soft);
+
+  --canvas-ambient:
+    radial-gradient(1100px 600px at 88% -8%, rgb(23 145 138 / 0.07), transparent 62%),
+    radial-gradient(900px 520px at 6% 4%, rgb(59 130 196 / 0.07), transparent 60%);
+
+  /* Card interior. In light this is opaque; in dark it becomes glass. */
+  --card-bg: var(--color-surface);
+  --card-border: var(--color-line);
+  --card-inner-highlight: none;
+  --card-blur: none;
+
+  /* Strength of the glow behind an accent rule or gauge. Off in light — on a
+     white card a glow reads as a printing error, not as light. */
+  --glow-strength: 0;
+  --grain-opacity: 0.035;
+}
+
+/* ---------------------------------------------------------------------------
+   Dark — command centre.
+
+   Deep navy rather than neutral charcoal, because every accent in this palette
+   is cool and a warm-neutral base would fight them. Surfaces are translucent
+   over the ambient wash, so cards pick up the colour behind them the way real
+   glass does.
+--------------------------------------------------------------------------- */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --color-canvas: #0a1520;
+  --color-surface: #10202e;
+  --color-surface-muted: #16293a;
+  --color-surface-sunken: #0c1a26;
+
+  --color-header: #081019;
+  --color-header-soft: #10202e;
+
+  /* Not pure white: #fff on a dark field vibrates and tires the eye over a
+     shift-long session. */
+  --color-ink: #e3edf5;
+  --color-ink-soft: #a3b8ca;
+  --color-ink-muted: #6f899f;
+  --color-ink-inverse: #0a1520;
+
+  --color-line: #1e3345;
+  --color-line-strong: #2c4a61;
+
+  /* Accents lifted in luminance and slightly desaturated. The light-theme
+     values are far too dark to read against a navy field. */
+  --color-brand: #2dd4bf;
+  --color-brand-soft: rgb(45 212 191 / 0.14);
+  --color-brand-strong: #5eead4;
+
+  --color-digital: #5aa9ee;
+  --color-digital-soft: rgb(90 169 238 / 0.14);
+
+  --color-workforce: #8b95f0;
+  --color-workforce-soft: rgb(139 149 240 / 0.14);
+
+  --color-ai: #b28cf7;
+  --color-ai-soft: rgb(178 140 247 / 0.14);
+
+  --color-quality: #3fd0c9;
+  --color-quality-soft: rgb(63 208 201 / 0.14);
+
+  --color-positive: #3ddc9a;
+  --color-positive-soft: rgb(61 220 154 / 0.15);
+  --color-negative: #ff7a8f;
+  --color-negative-soft: rgb(255 122 143 / 0.15);
+  --color-warning: #f5b53f;
+  --color-warning-soft: rgb(245 181 63 / 0.15);
+  --color-critical: #ff6b7f;
+  --color-critical-soft: rgb(255 107 127 / 0.15);
+  --color-neutral: #8ba3b8;
+  --color-neutral-soft: rgb(139 163 184 / 0.13);
+
+  /* Dark shadows carry almost no colour information; the separation comes
+     from the inner highlight on the card instead. */
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4), 0 2px 8px rgb(0 0 0 / 0.24);
+  --shadow-raised: 0 6px 20px rgb(0 0 0 / 0.45), 0 2px 6px rgb(0 0 0 / 0.3);
+  --shadow-lift: 0 14px 34px rgb(0 0 0 / 0.5), 0 3px 10px rgb(0 0 0 / 0.34);
+  --shadow-overlay: 0 24px 60px rgb(0 0 0 / 0.62);
+
+  --canvas-ambient:
+    radial-gradient(1200px 700px at 86% -10%, rgb(45 212 191 / 0.12), transparent 60%),
+    radial-gradient(1000px 620px at 4% 2%, rgb(90 169 238 / 0.11), transparent 58%),
+    radial-gradient(1400px 800px at 50% 120%, rgb(139 149 240 / 0.07), transparent 62%);
+
+  --card-bg: rgb(255 255 255 / 0.035);
+  --card-border: rgb(255 255 255 / 0.09);
+  /* The 1px inset highlight along the top edge is what sells glass. Without
+     it a translucent panel just looks like a lighter rectangle. */
+  --card-inner-highlight: inset 0 1px 0 0 rgb(255 255 255 / 0.07);
+  --card-blur: blur(14px);
+
+  --glow-strength: 1;
+  --grain-opacity: 0.05;
 }
 
 /* ---------------------------------------------------------------------------
@@ -79,17 +200,44 @@
     border-color: var(--color-line);
   }
 
+  /* The canvas lives on <html>, not <body>.
+     Background propagation from body to the viewport canvas is fragile once
+     `color-scheme: dark` is in play: any page shorter than the viewport falls
+     back to the UA's canvas, which under a dark colour-scheme is pure black.
+     Painting the root directly removes the dependency entirely. */
   html {
     -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+    min-height: 100%;
+    background-color: var(--color-canvas);
+    background-image: var(--canvas-ambient);
+    background-attachment: fixed;
+    background-repeat: no-repeat;
   }
 
   body {
-    background-color: var(--color-canvas);
+    min-height: 100dvh;
     color: var(--color-ink);
     font-family: var(--font-sans);
     font-feature-settings: 'tnum';
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Theme swaps should feel like a dimmer, not a hard cut. Colour only —
+       animating every property here would drag the whole page. */
+    transition: color var(--duration-slow) var(--ease-out-soft);
+  }
+
+  /* Film grain. Breaks the plastic flatness of large flat fills, and in dark
+     mode it hides the banding that wide radial gradients produce on 8-bit
+     panels. Fixed and non-interactive so it never intercepts a click. */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    pointer-events: none;
+    opacity: var(--grain-opacity);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   }
 
   /* Numbers must not reflow as they animate. Tabular figures everywhere a
@@ -130,13 +278,32 @@
 
 @layer components {
   .card {
-    background-color: var(--color-surface);
-    border: 1px solid var(--color-line);
+    background-color: var(--card-bg);
+    backdrop-filter: var(--card-blur);
+    border: 1px solid var(--card-border);
     border-radius: var(--radius-card);
-    box-shadow: var(--shadow-card);
+    box-shadow: var(--shadow-card), var(--card-inner-highlight);
+    transition:
+      box-shadow var(--duration-base) var(--ease-out-soft),
+      transform var(--duration-base) var(--ease-out-soft),
+      border-color var(--duration-base) var(--ease-out-soft);
   }
 
-  /* The coloured rule along the top edge of every KPI card in the deck. */
+  /* Opt-in lift. Only for cards that are genuinely a target — a KPI card the
+     user reads but cannot click should not pretend to be a button. */
+  .card-interactive:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lift), var(--card-inner-highlight);
+    border-color: var(--color-line-strong);
+  }
+  .card-interactive:active {
+    transform: translateY(0);
+    transition-duration: var(--duration-fast);
+  }
+
+  /* The coloured rule along the top edge of every KPI card in the deck. In
+     dark mode it also casts a short bloom, which is what makes the accent
+     read as emitted light rather than printed ink. */
   .card-accent {
     position: relative;
     overflow: hidden;
@@ -148,10 +315,72 @@
     top: 0;
     height: 3px;
     background: var(--accent, var(--color-brand));
+    box-shadow: 0 0 calc(14px * var(--glow-strength)) var(--accent, var(--color-brand));
+  }
+
+  /* Frosted panel for the header and other bars that overlay content. */
+  .glass-bar {
+    background-color: color-mix(in srgb, var(--color-header) 88%, transparent);
+    backdrop-filter: blur(12px) saturate(140%);
   }
 }
 
 @layer utilities {
+  /* Entry animation. Applied with an inline --i index so a grid of cards
+     cascades instead of appearing as one slab. */
+  @keyframes rise-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .animate-rise {
+    animation: rise-in var(--duration-slow) var(--ease-out-soft) both;
+    animation-delay: calc(var(--i, 0) * 40ms);
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  .animate-fade {
+    animation: fade-in var(--duration-base) var(--ease-out-soft) both;
+  }
+
+  /* Slow ambient pulse for live-status dots. */
+  @keyframes pulse-ring {
+    0% {
+      box-shadow: 0 0 0 0 currentColor;
+      opacity: 0.55;
+    }
+    70% {
+      box-shadow: 0 0 0 7px transparent;
+      opacity: 0;
+    }
+    100% {
+      box-shadow: 0 0 0 0 transparent;
+      opacity: 0;
+    }
+  }
+
+  .pulse-ring::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 999px;
+    animation: pulse-ring 2.4s var(--ease-out-soft) infinite;
+  }
+
   /* Respect the user's motion preference. A simulation screen animates a lot
      of numbers; for anyone with vestibular sensitivity that is not a nicety. */
   @media (prefers-reduced-motion: reduce) {

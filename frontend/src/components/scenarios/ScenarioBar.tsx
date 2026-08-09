@@ -57,7 +57,7 @@ export function ScenarioBar({ centerId, tab }: { centerId: string; tab: Simulati
               key={scenario.id}
               className={cn(
                 'group flex items-center gap-1 rounded-lg border border-[var(--color-line-strong)]',
-                'bg-white ps-2 text-sm transition-colors hover:border-[var(--color-brand)]',
+                'bg-[var(--color-surface)] ps-2 text-sm transition-colors hover:border-[var(--color-brand)]',
               )}
             >
               <button
@@ -89,7 +89,7 @@ export function ScenarioBar({ centerId, tab }: { centerId: string; tab: Simulati
             to={`/centers/${centerId}/compare`}
             className={cn(
               'inline-flex h-8 items-center gap-2 rounded-lg border border-[var(--color-line-strong)]',
-              'bg-white px-3 text-sm font-medium text-[var(--color-ink)] transition-colors',
+              'bg-[var(--color-surface)] px-3 text-sm font-medium text-[var(--color-ink)] transition-colors',
               'hover:bg-[var(--color-surface-muted)]',
             )}
           >

@@ -40,7 +40,7 @@ export function ChartTooltipBox({
   return (
     <div
       dir="rtl"
-      className="rounded-lg border border-[var(--color-line)] bg-white px-3 py-2 shadow-[var(--shadow-raised)]"
+      className="rounded-lg border border-[var(--color-line)] bg-[var(--color-surface)] px-3 py-2 shadow-[var(--shadow-raised)]"
     >
       <p className="mb-1 text-xs font-semibold text-[var(--color-ink)]">{label}</p>
       {rows.map((row) => (

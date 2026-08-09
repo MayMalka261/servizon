@@ -65,8 +65,11 @@ export function CentersGrid({ centers }: { centers: ServiceCenter[] }) {
                 paddingBottom: GAP,
               }}
             >
-              {slice.map((center) => (
-                <CenterCard key={center.id} center={center} />
+              {/* Stagger within the row, not across the whole list: rows mount
+                  as they scroll into view, and a global index would give the
+                  hundredth card a four-second delay. */}
+              {slice.map((center, column) => (
+                <CenterCard key={center.id} center={center} index={column} />
               ))}
             </div>
           )

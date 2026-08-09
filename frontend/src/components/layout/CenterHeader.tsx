@@ -7,6 +7,13 @@ import { formatDateTime, formatNumber } from '@/simulation/format'
 import { cn } from '@/lib/utils'
 import type { ServiceCenter, Snapshot } from '@/types/api'
 
+const STATUS_ACCENT: Record<ServiceCenter['status'], string> = {
+  active: 'var(--color-positive)',
+  strained: 'var(--color-warning)',
+  critical: 'var(--color-critical)',
+  offline: 'var(--color-neutral)',
+}
+
 export function CenterHeader({
   center,
   snapshot,
@@ -16,9 +23,21 @@ export function CenterHeader({
 }) {
   const status = STATUS_STYLES[center.status]
 
+  const accent = STATUS_ACCENT[center.status]
+
   return (
-    <div className="card p-4">
-      <nav aria-label="ניווט" className="mb-2 flex items-center gap-1 text-xs text-[var(--color-ink-muted)]">
+    <div className="card animate-fade relative overflow-hidden p-4">
+      {/* Status wash across the leading edge. Opening a center should tell you
+          how it is doing before you have read a single number. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-[0.07]"
+        style={{ background: `linear-gradient(to left, ${accent}, transparent 45%)` }}
+      />
+      <nav
+        aria-label="ניווט"
+        className="relative mb-2 flex items-center gap-1 text-xs text-[var(--color-ink-muted)]"
+      >
         <Link to="/" className="transition-colors hover:text-[var(--color-brand)]">
           מוקדי שירות
         </Link>
@@ -26,10 +45,12 @@ export function CenterHeader({
         <span className="font-medium text-[var(--color-ink-soft)]">מרכז הסימולציה</span>
       </nav>
 
-      <div className="flex flex-wrap items-start justify-between gap-4">
+      <div className="relative flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-xl font-bold text-[var(--color-ink)]">{center.name}</h1>
+            <h1 className="text-2xl font-bold tracking-[-0.02em] text-[var(--color-ink)]">
+              {center.name}
+            </h1>
             <Badge className={status.chip}>
               <span className={cn('h-1.5 w-1.5 rounded-full', status.dot)} />
               {center.status_label}

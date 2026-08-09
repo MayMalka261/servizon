@@ -57,7 +57,7 @@ export function LeverControl({
         'rounded-xl border p-3 transition-colors',
         isMoved
           ? 'border-transparent'
-          : 'border-[var(--color-line)] bg-white hover:border-[var(--color-line-strong)]',
+          : 'border-[var(--color-line)] bg-[var(--color-surface)] hover:border-[var(--color-line-strong)]',
       )}
       style={isMoved ? { backgroundColor: accent.soft } : undefined}
     >
@@ -91,7 +91,7 @@ export function LeverControl({
             className={cn(
               'rounded-md p-1 transition-colors',
               isMoved
-                ? 'text-[var(--color-ink-soft)] hover:bg-white hover:text-[var(--color-ink)]'
+                ? 'text-[var(--color-ink-soft)] hover:bg-[var(--color-surface)] hover:text-[var(--color-ink)]'
                 : 'cursor-not-allowed text-[var(--color-line-strong)]',
             )}
           >

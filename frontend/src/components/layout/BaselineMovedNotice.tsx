@@ -34,7 +34,7 @@ export function BaselineMovedNotice() {
             type="button"
             onClick={acknowledge}
             aria-label="סגירת ההודעה"
-            className="ms-auto rounded-md p-1 text-[var(--color-ink-muted)] transition-colors hover:bg-white/60"
+            className="ms-auto rounded-md p-1 text-[var(--color-ink-muted)] transition-colors hover:bg-[var(--color-ink)]/10"
           >
             <X className="h-3.5 w-3.5" />
           </button>

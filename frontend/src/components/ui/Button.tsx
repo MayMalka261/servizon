@@ -11,7 +11,7 @@ const button = cva(
         primary:
           'bg-[var(--color-brand)] text-white hover:bg-[var(--color-brand-strong)] shadow-sm',
         secondary:
-          'bg-white text-[var(--color-ink)] border border-[var(--color-line-strong)] hover:bg-[var(--color-surface-muted)]',
+          'bg-[var(--color-surface)] text-[var(--color-ink)] border border-[var(--color-line-strong)] hover:bg-[var(--color-surface-muted)]',
         ghost: 'text-[var(--color-ink-soft)] hover:bg-[var(--color-surface-sunken)]',
         danger:
           'bg-[var(--color-negative-soft)] text-[var(--color-negative)] hover:bg-[var(--color-negative)] hover:text-white',

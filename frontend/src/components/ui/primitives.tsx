@@ -24,7 +24,7 @@ export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputE
     <input
       ref={ref}
       className={cn(
-        'h-10 w-full rounded-lg border border-[var(--color-line-strong)] bg-white px-3 text-sm',
+        'h-10 w-full rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-surface)] px-3 text-sm',
         'text-[var(--color-ink)] placeholder:text-[var(--color-ink-muted)]',
         'transition-colors focus:border-[var(--color-brand)] focus:outline-none',
         'disabled:cursor-not-allowed disabled:bg-[var(--color-surface-muted)]',
@@ -62,7 +62,7 @@ export function Select({
       value={value}
       onChange={(event) => onChange(event.target.value)}
       className={cn(
-        'h-10 w-full appearance-none rounded-lg border border-[var(--color-line-strong)] bg-white',
+        'h-10 w-full appearance-none rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-surface)]',
         'px-3 pe-8 text-sm text-[var(--color-ink)] transition-colors',
         'focus:border-[var(--color-brand)] focus:outline-none',
         // Chevron drawn as a background image so it sits on the correct side
@@ -127,7 +127,7 @@ export function Slider({
       </SliderPrimitive.Track>
       <SliderPrimitive.Thumb
         className={cn(
-          'block h-4 w-4 rounded-full border-2 bg-white shadow-sm transition-transform',
+          'block h-4 w-4 rounded-full border-2 bg-[var(--color-surface)] shadow-sm transition-transform',
           'hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
           'disabled:pointer-events-none',
         )}
@@ -150,7 +150,7 @@ export function BaselineTrack({ value, min, max }: { value: number; min: number;
         />
       </div>
       <div
-        className="absolute h-3.5 w-3.5 rounded-full border-2 border-[var(--color-ink-muted)] bg-white"
+        className="absolute h-3.5 w-3.5 rounded-full border-2 border-[var(--color-ink-muted)] bg-[var(--color-surface)]"
         style={{ insetInlineStart: `calc(${percent}% - 7px)` }}
       />
     </div>
@@ -220,10 +220,11 @@ export function TabsTrigger({ value, children }: { value: string; children: Reac
     <TabsPrimitive.Trigger
       value={value}
       className={cn(
-        'inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all',
+        'inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium',
+        'transition-all duration-[var(--duration-base)] ease-[var(--ease-out-soft)]',
         'text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]',
-        'data-[state=active]:bg-white data-[state=active]:text-[var(--color-ink)]',
-        'data-[state=active]:shadow-sm',
+        'data-[state=active]:bg-[var(--color-surface)] data-[state=active]:text-[var(--color-brand)]',
+        'data-[state=active]:shadow-[var(--shadow-raised)]',
       )}
     >
       {children}
@@ -255,7 +256,7 @@ export function DialogContent({
         dir="rtl"
         className={cn(
           'fixed start-1/2 top-1/2 z-50 w-[calc(100vw-2rem)] max-w-md -translate-y-1/2',
-          'translate-x-1/2 rounded-2xl bg-white p-6 shadow-[var(--shadow-overlay)]',
+          'translate-x-1/2 rounded-2xl bg-[var(--color-surface)] p-6 shadow-[var(--shadow-overlay)]',
         )}
       >
         <div className="mb-4 flex items-start justify-between gap-4">

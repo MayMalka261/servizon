@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="color-scheme" content="light" />
+    <meta name="color-scheme" content="light dark" />
     <!--
       Content Security Policy with no external origins. On the target network
       there is nothing outside to reach, and declaring it here turns a stray
@@ -24,6 +24,12 @@
     <meta name="description" content="כלי הדמיה ותמיכה בקבלת החלטות למרכזי שירות" />
   </head>
   <body>
+    <!--
+      Runs before first paint so a dark-theme user never sees a white flash.
+      Deliberately a same-origin file rather than an inline script — the CSP
+      above has no `unsafe-inline` for scripts and is not worth loosening.
+    -->
+    <script src="/theme-boot.js"></script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

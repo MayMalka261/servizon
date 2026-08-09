@@ -132,11 +132,17 @@ def _mount_frontend(app: FastAPI, static_dir) -> None:  # type: ignore[no-untype
         """Client-side routing: any unmatched path returns the SPA shell.
 
         Registered after the API routers, so it only catches what they did not.
+
+        The shell is served `no-cache`. Its filename never changes while the
+        hashed bundles it points at do, so a cached copy pins users to the
+        previous build — on a closed network, indefinitely, with no obvious
+        way for them to know. `no-cache` still allows a revalidated 304; it
+        only forbids using the copy without asking.
         """
         candidate = static_dir / full_path
         if full_path and candidate.is_file():
             return FileResponse(candidate)
-        return FileResponse(index)
+        return FileResponse(index, headers={"Cache-Control": "no-cache"})
 
     log.info("frontend_mounted", path=str(static_dir))
 

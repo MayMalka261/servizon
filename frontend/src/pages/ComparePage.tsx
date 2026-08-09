@@ -89,7 +89,7 @@ export function ComparePage() {
                     'inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm transition-colors',
                     active
                       ? 'border-[var(--color-brand)] bg-[var(--color-brand-soft)] font-medium text-[var(--color-brand-strong)]'
-                      : 'border-[var(--color-line-strong)] bg-white text-[var(--color-ink)] hover:bg-[var(--color-surface-muted)]',
+                      : 'border-[var(--color-line-strong)] bg-[var(--color-surface)] text-[var(--color-ink)] hover:bg-[var(--color-surface-muted)]',
                     full && 'cursor-not-allowed opacity-40',
                   )}
                 >

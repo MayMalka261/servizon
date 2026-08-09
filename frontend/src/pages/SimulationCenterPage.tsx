@@ -116,8 +116,12 @@ export function SimulationCenterPage() {
 
       {/* Three columns, matching the deck: levers, metrics, charts. Stacks on
           narrow screens, where the lever panel comes first because that is
-          what the user came to touch. */}
-      <div className="grid gap-4 xl:grid-cols-[300px_minmax(0,1fr)_360px]">
+          what the user came to touch.
+
+          Keyed on the tab so switching replays the entry animation — the two
+          tabs show different metrics, and a cascade makes that legible in a
+          way an instant swap does not. */}
+      <div key={tab} className="grid gap-4 xl:grid-cols-[300px_minmax(0,1fr)_360px]">
         <LeverPanel levers={levers} snapshot={snapshot} tab={tab} />
 
         <section className="space-y-4" aria-label="מדדי השירות">
@@ -136,8 +140,8 @@ export function SimulationCenterPage() {
             </div>
           ) : (
             <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">
-              {result.kpis.map((kpi) => (
-                <KpiCard key={kpi.id} kpi={kpi} accent={accent} />
+              {result.kpis.map((kpi, index) => (
+                <KpiCard key={kpi.id} kpi={kpi} accent={accent} index={index} />
               ))}
             </div>
           )}
