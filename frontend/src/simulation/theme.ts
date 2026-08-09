@@ -40,6 +40,13 @@ export const ACCENTS: Record<LeverGroup, Accent> = {
     bg: 'bg-[var(--color-ai-soft)]',
     border: 'border-[var(--color-ai)]',
   },
+  quality: {
+    color: 'var(--color-quality)',
+    soft: 'var(--color-quality-soft)',
+    text: 'text-[var(--color-quality)]',
+    bg: 'bg-[var(--color-quality-soft)]',
+    border: 'border-[var(--color-quality)]',
+  },
   targets: {
     color: 'var(--color-brand)',
     soft: 'var(--color-brand-soft)',

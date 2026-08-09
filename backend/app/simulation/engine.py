@@ -124,7 +124,13 @@ _KPI_SOURCES: dict[KpiId, str] = {
     KpiId.UTILIZATION: R.V_UTILIZATION,
     KpiId.QUEUE_LENGTH: R.V_QUEUE_LENGTH,
     KpiId.REQUIRED_AGENTS: R.V_REQUIRED_AGENTS,
-    KpiId.AI_USAGE: R.V_AI_USAGE,
+    KpiId.AGENT_AI_USAGE: R.V_AGENT_AI_USAGE,
+    KpiId.CUSTOMER_AI_USAGE: R.V_CUSTOMER_AI_USAGE,
+    KpiId.DIGITAL_CONTACTS: R.V_DIGITAL_CONTACTS,
+    KpiId.CONTAINMENT_RATE: R.V_CONTAINMENT,
+    KpiId.ESCALATED_CONTACTS: R.V_ESCALATED,
+    KpiId.SELF_SERVICE_RATE: R.V_SELF_SERVICE,
+    KpiId.AUTOMATION_LEVEL: R.V_AUTOMATION,
 }
 
 
@@ -150,7 +156,12 @@ def _round_for_display(kpi_id: KpiId, value: float) -> float:
     something changed, which destroys trust in the whole tool.
     """
     definition = KPIS_BY_ID[kpi_id]
-    if kpi_id in (KpiId.INCOMING_CALLS, KpiId.REQUIRED_AGENTS):
+    if kpi_id in (
+        KpiId.INCOMING_CALLS,
+        KpiId.REQUIRED_AGENTS,
+        KpiId.DIGITAL_CONTACTS,
+        KpiId.ESCALATED_CONTACTS,
+    ):
         return float(round(value))
     if definition.format.value == "percent":
         return round(value, 4)

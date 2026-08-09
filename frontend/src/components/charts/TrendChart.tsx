@@ -25,15 +25,17 @@ import type { TrendPoint } from '@/types/api'
 export function TrendChart({
   trend,
   scenarioDaily,
+  title,
   accent,
 }: {
   trend: TrendPoint[]
   scenarioDaily: number | undefined
+  title: string
   accent: string
 }) {
   if (trend.length === 0) {
     return (
-      <ChartFrame title="מגמת נפח פניות">
+      <ChartFrame title={title}>
         <EmptyChart />
       </ChartFrame>
     )
@@ -41,7 +43,7 @@ export function TrendChart({
 
   return (
     <ChartFrame
-      title="מגמת נפח פניות"
+      title={title}
       description="נפח יומי בפועל ב-28 הימים האחרונים, מול הנפח הצפוי בתרחיש."
     >
       <ResponsiveContainer width="100%" height="100%">

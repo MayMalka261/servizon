@@ -141,7 +141,11 @@ class Snapshot(Frozen):
     captured_at: datetime
     baseline: BaselineMetrics
     kpis: tuple[KpiValue, ...]
-    trend: tuple[TrendPoint, ...]
+    #: Observed daily volume per tab. Split by channel so each tab's chart
+    #: compares its own history against its own projection — drawing a
+    #: phone-only scenario line across all-channel history would overstate the
+    #: deflection every time.
+    trend: dict[SimulationTab, tuple[TrendPoint, ...]]
     #: Per-center starting position of each lever, in display units.
     lever_defaults: dict[LeverId, float]
     #: Overrides for levers whose range scales with the center's size.

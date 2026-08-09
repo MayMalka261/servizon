@@ -49,11 +49,22 @@ export function SimulationCenterPage() {
 
   const accent = TAB_ACCENT[tab]
 
-  const incomingCalls = useMemo(
-    () => result?.kpis.find((kpi) => kpi.id === ('incoming_calls' satisfies KpiId)),
-    [result],
-  )
-  const slaKpi = useMemo(() => result?.kpis.find((kpi) => kpi.id === ('sla' satisfies KpiId)), [result])
+  // Each tab has its own headline pair: the metric the gauge tracks against a
+  // target, and the volume the trend line projects. Naming them per tab keeps
+  // the charts honest when the KPI sets no longer overlap.
+  const headline = useMemo(() => {
+    const find = (id: KpiId) => result?.kpis.find((kpi) => kpi.id === id)
+    return tab === 'phone_center'
+      ? { gauge: find('sla'), volume: find('incoming_calls') }
+      : { gauge: find('containment_rate'), volume: find('digital_contacts') }
+  }, [result, tab])
+
+  const gaugeConfig =
+    tab === 'phone_center'
+      ? { title: 'עמידה ב-SLA', target: 0.9 }
+      : // Sixty percent contained is a common ambition for a digital estate,
+        // not a regulated threshold — stated as a target, not a rule.
+        { title: 'שיעור הכלה דיגיטלי', target: 0.6 }
 
   if (centerError) {
     return (
@@ -135,15 +146,20 @@ export function SimulationCenterPage() {
         </section>
 
         <section className="space-y-4" aria-label="גרפים">
-          <GaugeChart kpi={slaKpi} />
+          <GaugeChart
+            kpi={headline.gauge}
+            title={gaugeConfig.title}
+            target={gaugeConfig.target}
+          />
           <TrendChart
-            trend={snapshot?.trend ?? []}
-            scenarioDaily={incomingCalls?.scenario}
+            trend={snapshot?.trend?.[tab] ?? []}
+            scenarioDaily={headline.volume?.scenario}
+            title={tab === 'phone_center' ? 'מגמת נפח שיחות' : 'מגמת נפח פניות דיגיטליות'}
             accent={accent}
           />
           <WaterfallChart steps={result?.waterfall ?? []} hasScenario={hasScenario} />
-          <BarComparison kpis={result?.kpis ?? []} accent={accent} />
-          <ServiceRadarChart kpis={result?.kpis ?? []} />
+          <BarComparison kpis={result?.kpis ?? []} tab={tab} accent={accent} />
+          <ServiceRadarChart kpis={result?.kpis ?? []} tab={tab} />
         </section>
       </div>
     </main>

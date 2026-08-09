@@ -58,7 +58,13 @@ V_SATISFACTION: Final = "satisfaction"
 V_REQUIRED_AGENTS: Final = "required_agents"
 V_UTILIZATION: Final = "utilization"
 V_QUEUE_TOLERANCE: Final = "queue_tolerance"
-V_AI_USAGE: Final = "ai_usage"
+V_AGENT_AI_USAGE: Final = "agent_ai_usage"
+V_CUSTOMER_AI_USAGE: Final = "customer_ai_usage"
+V_DIGITAL_CONTACTS: Final = "digital_contacts"
+V_CONTAINMENT: Final = "containment_rate"
+V_ESCALATED: Final = "escalated_contacts"
+V_SELF_SERVICE: Final = "self_service_rate"
+V_AUTOMATION: Final = "automation_level"
 
 # --- satisfaction reference points ---------------------------------------
 # The service quality a caller treats as unremarkable. Scoring against fixed
@@ -187,6 +193,40 @@ def _rule_contact_volume(ctx: RuleContext) -> dict[str, float]:
 
     total = max(deflected * (repeats_scenario / max(repeats_baseline, 1e-6)), 0.0)
     return {V_AGENT_CONTACTS: total, V_TOTAL_CONTACTS: ctx.baseline.daily_contacts}
+
+
+def _rule_digital_estate(ctx: RuleContext) -> dict[str, float]:
+    """The digital channels' own view of the same simulation.
+
+    The phone metrics answer "how long do people wait". These answer "how much
+    never had to reach a person at all", which is the question the digital tab
+    exists for.
+
+    Containment needs an absolute anchor. `V_DEFLECTION` is a *relative*
+    survival factor — it is 1.0 at baseline, so reading containment straight
+    off it would claim every center currently resolves nothing without an
+    agent. Anchoring on the observed self-service rate makes it read correctly
+    at baseline and rise from there as levers deflect more.
+    """
+    digital_share = ctx.lever(LeverId.DIGITAL_ADOPTION, ctx.baseline.digital_adoption)
+    digital_contacts = ctx.value(V_TOTAL_CONTACTS) * _clamp(digital_share, 0.0, 1.0)
+
+    baseline_contained = _clamp(ctx.baseline.self_service_rate, 0.0, 0.95)
+    contained = 1.0 - (1.0 - baseline_contained) * ctx.value(V_DEFLECTION)
+
+    return {
+        V_DIGITAL_CONTACTS: digital_contacts,
+        V_CONTAINMENT: _clamp(contained, 0.0, 0.98),
+        # Same volume the phone side calls "incoming calls". From the digital
+        # tab it is the escalation rate — what the channel failed to absorb.
+        V_ESCALATED: ctx.value(V_AGENT_CONTACTS),
+        V_SELF_SERVICE: _clamp(
+            ctx.lever(LeverId.SELF_SERVICE_RATE, ctx.baseline.self_service_rate), 0.0, 1.0
+        ),
+        V_AUTOMATION: _clamp(
+            ctx.lever(LeverId.AUTOMATION_LEVEL, ctx.baseline.automation_level), 0.0, 1.0
+        ),
+    }
 
 
 def _rule_peak_load(ctx: RuleContext) -> dict[str, float]:
@@ -326,10 +366,15 @@ def _rule_utilization(ctx: RuleContext) -> dict[str, float]:
 
 
 def _rule_ai_usage(ctx: RuleContext) -> dict[str, float]:
-    """Headline AI figure: the mean of the agent-side and customer-side rates."""
-    agent_ai = ctx.lever(LeverId.AGENT_AI, ctx.baseline.agent_ai_usage)
-    customer_ai = ctx.lever(LeverId.CUSTOMER_AI, ctx.baseline.customer_ai_usage)
-    return {V_AI_USAGE: (agent_ai + customer_ai) / 2.0}
+    """Agent-side and customer-side AI, reported separately.
+
+    They belong to different tabs because they do different work: customer AI
+    deflects contacts before they arrive, agent AI shortens the ones that do.
+    """
+    return {
+        V_AGENT_AI_USAGE: ctx.lever(LeverId.AGENT_AI, ctx.baseline.agent_ai_usage),
+        V_CUSTOMER_AI_USAGE: ctx.lever(LeverId.CUSTOMER_AI, ctx.baseline.customer_ai_usage),
+    }
 
 
 # --- registry -------------------------------------------------------------
@@ -362,6 +407,19 @@ RULES: tuple[Rule, ...] = (
         inputs=(V_DEFLECTION, V_EFFECTIVE_FCR),
         outputs=(V_AGENT_CONTACTS, V_TOTAL_CONTACTS),
         fn=_rule_contact_volume,
+    ),
+    Rule(
+        id="digital_estate",
+        label="מדדי הערוצים הדיגיטליים",
+        inputs=(V_TOTAL_CONTACTS, V_AGENT_CONTACTS, V_DEFLECTION),
+        outputs=(
+            V_DIGITAL_CONTACTS,
+            V_CONTAINMENT,
+            V_ESCALATED,
+            V_SELF_SERVICE,
+            V_AUTOMATION,
+        ),
+        fn=_rule_digital_estate,
     ),
     Rule(
         id="peak_load",
@@ -421,9 +479,9 @@ RULES: tuple[Rule, ...] = (
     ),
     Rule(
         id="ai_usage",
-        label="שימוש כולל ב-AI",
+        label="שימוש ב-AI",
         inputs=(),
-        outputs=(V_AI_USAGE,),
+        outputs=(V_AGENT_AI_USAGE, V_CUSTOMER_AI_USAGE),
         fn=_rule_ai_usage,
     ),
 )

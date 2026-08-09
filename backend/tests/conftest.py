@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 import pytest
 
 from app.config import get_settings
-from app.domain.enums import KpiId, LeverId
+from app.domain.enums import KpiId, LeverId, SimulationTab
 from app.domain.models import BaselineMetrics, LeverBounds, Snapshot
 from app.simulation.coefficients import Coefficients, load_coefficients
 from app.simulation.engine import SimulationEngine
@@ -59,7 +59,7 @@ def snapshot(baseline: BaselineMetrics) -> Snapshot:
         captured_at=datetime.now(UTC),
         baseline=baseline,
         kpis=(),
-        trend=(),
+        trend={tab: () for tab in SimulationTab},
         lever_defaults={
             LeverId.DIGITAL_ADOPTION: 45.0,
             LeverId.SELF_SERVICE_RATE: 30.0,

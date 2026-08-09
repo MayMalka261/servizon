@@ -63,7 +63,11 @@ def build_recommendations(
     indexed = _by_id(kpis)
     found: list[Recommendation] = []
 
+    # Each block reads only the KPIs its tab publishes and returns nothing when
+    # they are absent, so the same builder serves both tabs without either one
+    # commenting on metrics the user cannot see.
     found.extend(_headline(indexed, moved_levers))
+    found.extend(_digital_headline(indexed, moved_levers))
     found.extend(_capacity_warnings(indexed, scenario_values, baseline))
     found.extend(_target_checks(indexed, baseline, levers))
     found.extend(_staffing_gap(indexed, baseline, levers))
@@ -131,6 +135,61 @@ def _headline(
             severity=Severity.POSITIVE if improving else Severity.WARNING,
             title="השפעת התרחיש",
             body=body,
+        )
+    ]
+
+
+def _digital_headline(
+    indexed: dict[KpiId, SimulatedKpi],
+    moved: dict[LeverId, tuple[float, float]],
+) -> list[Recommendation]:
+    """The digital tab's equivalent of the headline.
+
+    Phrased in the language of the estate the user is looking at: how much more
+    is contained, and how many fewer contacts had to be escalated to a person.
+    """
+    contained = indexed.get(KpiId.CONTAINMENT_RATE)
+    escalated = indexed.get(KpiId.ESCALATED_CONTACTS)
+    if contained is None or escalated is None:
+        return []
+
+    described = sorted(moved.items(), key=lambda item: abs(item[1][1] - item[1][0]), reverse=True)[
+        :2
+    ]
+    phrases = [
+        _format_lever_delta(lever_id, before, after) for lever_id, (before, after) in described
+    ]
+    subject = " ו".join(phrases) if len(phrases) > 1 else phrases[0]
+
+    effects: list[str] = []
+    if abs(contained.difference) >= 0.005:
+        verb = "להעלות" if contained.difference > 0 else "להוריד"
+        effects.append(f"{verb} את שיעור ההכלה ב-{_format_points(contained.difference)} נקודות")
+    if abs(escalated.difference) >= 1:
+        verb = "להפחית" if escalated.difference < 0 else "להגדיל"
+        effects.append(
+            f"{verb} את הפניות שמועברות לנציג ב-{_format_number(abs(escalated.difference))} ביום"
+        )
+
+    if not effects:
+        return [
+            Recommendation(
+                id="digital_no_material_effect",
+                severity=Severity.INFO,
+                title="השפעה זניחה",
+                body=f"{subject} אינה משנה את מדדי הערוצים הדיגיטליים באופן מהותי.",
+            )
+        ]
+
+    body = (
+        f"{subject} צפויה " + " ו".join(effects) if len(effects) > 1 else f"{subject} צפויה {effects[0]}"
+    )
+    return [
+        Recommendation(
+            id="digital_headline",
+            severity=Severity.POSITIVE if contained.difference > 0 else Severity.WARNING,
+            title="השפעת התרחיש",
+            body=f"{body}.",
         )
     ]
 

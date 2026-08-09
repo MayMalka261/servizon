@@ -31,6 +31,7 @@ from app.domain.enums import (
     ChannelKind,
     District,
     LeverId,
+    SimulationTab,
 )
 from app.domain.models import (
     BaselineMetrics,
@@ -399,18 +400,44 @@ def _channel_config(channels: pd.DataFrame, interactions: pd.DataFrame) -> dict[
     }
 
 
-def _build_trend(interactions: pd.DataFrame) -> tuple[TrendPoint, ...]:
+def _build_trend(
+    interactions: pd.DataFrame,
+) -> dict[SimulationTab, tuple[TrendPoint, ...]]:
+    """Observed daily volume, split the same way the tabs are.
+
+    The phone series is what the queueing model projects against; the digital
+    series is what the deflection metrics project against. Keeping them apart
+    means neither chart draws a scenario line across history it does not
+    describe.
+    """
     if interactions.empty:
-        return ()
-    daily = (
-        interactions.assign(day=interactions["ts_bucket"].dt.normalize())
-        .groupby("day", sort=True)["offered"]
-        .sum()
-    )
-    return tuple(
-        TrendPoint(label=day.strftime("%d/%m"), value=round(float(value), 1))
-        for day, value in daily.items()
-    )
+        return {tab: () for tab in SimulationTab}
+
+    digital_names = {c.value for c in DIGITAL_CHANNELS}
+    frames = {
+        SimulationTab.PHONE_CENTER: interactions[
+            interactions["channel"] == ChannelKind.PHONE.value
+        ],
+        SimulationTab.DIGITAL_CHANNELS: interactions[
+            interactions["channel"].isin(digital_names)
+        ],
+    }
+
+    series: dict[SimulationTab, tuple[TrendPoint, ...]] = {}
+    for tab, frame in frames.items():
+        if frame.empty:
+            series[tab] = ()
+            continue
+        daily = (
+            frame.assign(day=frame["ts_bucket"].dt.normalize())
+            .groupby("day", sort=True)["offered"]
+            .sum()
+        )
+        series[tab] = tuple(
+            TrendPoint(label=day.strftime("%d/%m"), value=round(float(value), 1))
+            for day, value in daily.items()
+        )
+    return series
 
 
 def _lever_defaults(baseline: BaselineMetrics) -> dict[LeverId, float]:

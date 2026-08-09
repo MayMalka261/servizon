@@ -19,20 +19,29 @@ BOTH_TABS: tuple[SimulationTab, ...] = (
     SimulationTab.PHONE_CENTER,
 )
 PHONE_ONLY: tuple[SimulationTab, ...] = (SimulationTab.PHONE_CENTER,)
+DIGITAL_ONLY: tuple[SimulationTab, ...] = (SimulationTab.DIGITAL_CHANNELS,)
 
 GROUP_DIGITAL = "digital"
 GROUP_AI = "ai"
 GROUP_WORKFORCE = "workforce"
+GROUP_QUALITY = "quality"
 GROUP_TARGETS = "targets"
 
 GROUP_LABELS: dict[str, str] = {
     GROUP_DIGITAL: "אימוץ דיגיטלי",
     GROUP_AI: "שימוש ב-AI",
     GROUP_WORKFORCE: "קיבולת כוח אדם",
+    GROUP_QUALITY: "איכות השירות",
     GROUP_TARGETS: "יעדי שירות",
 }
 
-GROUP_ORDER: tuple[str, ...] = (GROUP_DIGITAL, GROUP_WORKFORCE, GROUP_AI, GROUP_TARGETS)
+GROUP_ORDER: tuple[str, ...] = (
+    GROUP_DIGITAL,
+    GROUP_WORKFORCE,
+    GROUP_AI,
+    GROUP_QUALITY,
+    GROUP_TARGETS,
+)
 
 #: Levers expressed as a percentage of contacts / quality, 0-100.
 _PERCENT_LEVERS: frozenset[LeverId] = frozenset(
@@ -69,7 +78,7 @@ LEVER_DEFINITIONS: tuple[LeverDefinition, ...] = (
         min=0,
         max=100,
         step=1,
-        tabs=BOTH_TABS,
+        tabs=DIGITAL_ONLY,
         group=GROUP_DIGITAL,
         group_label=GROUP_LABELS[GROUP_DIGITAL],
     ),
@@ -81,7 +90,7 @@ LEVER_DEFINITIONS: tuple[LeverDefinition, ...] = (
         min=0,
         max=100,
         step=1,
-        tabs=BOTH_TABS,
+        tabs=DIGITAL_ONLY,
         group=GROUP_DIGITAL,
         group_label=GROUP_LABELS[GROUP_DIGITAL],
     ),
@@ -93,7 +102,7 @@ LEVER_DEFINITIONS: tuple[LeverDefinition, ...] = (
         min=1,
         max=500,
         step=1,
-        tabs=BOTH_TABS,
+        tabs=PHONE_ONLY,
         group=GROUP_WORKFORCE,
         group_label=GROUP_LABELS[GROUP_WORKFORCE],
         dynamic_bounds=True,
@@ -106,7 +115,7 @@ LEVER_DEFINITIONS: tuple[LeverDefinition, ...] = (
         min=4,
         max=24,
         step=1,
-        tabs=BOTH_TABS,
+        tabs=PHONE_ONLY,
         group=GROUP_WORKFORCE,
         group_label=GROUP_LABELS[GROUP_WORKFORCE],
     ),
@@ -118,7 +127,7 @@ LEVER_DEFINITIONS: tuple[LeverDefinition, ...] = (
         min=30,
         max=900,
         step=5,
-        tabs=BOTH_TABS,
+        tabs=PHONE_ONLY,
         group=GROUP_WORKFORCE,
         group_label=GROUP_LABELS[GROUP_WORKFORCE],
     ),
@@ -131,8 +140,8 @@ LEVER_DEFINITIONS: tuple[LeverDefinition, ...] = (
         max=99,
         step=1,
         tabs=BOTH_TABS,
-        group=GROUP_WORKFORCE,
-        group_label=GROUP_LABELS[GROUP_WORKFORCE],
+        group=GROUP_QUALITY,
+        group_label=GROUP_LABELS[GROUP_QUALITY],
     ),
     LeverDefinition(
         id=LeverId.AGENT_AI,
@@ -142,7 +151,7 @@ LEVER_DEFINITIONS: tuple[LeverDefinition, ...] = (
         min=0,
         max=100,
         step=1,
-        tabs=BOTH_TABS,
+        tabs=PHONE_ONLY,
         group=GROUP_AI,
         group_label=GROUP_LABELS[GROUP_AI],
     ),
@@ -154,7 +163,7 @@ LEVER_DEFINITIONS: tuple[LeverDefinition, ...] = (
         min=0,
         max=100,
         step=1,
-        tabs=BOTH_TABS,
+        tabs=DIGITAL_ONLY,
         group=GROUP_AI,
         group_label=GROUP_LABELS[GROUP_AI],
     ),
@@ -167,8 +176,8 @@ LEVER_DEFINITIONS: tuple[LeverDefinition, ...] = (
         max=100,
         step=1,
         tabs=BOTH_TABS,
-        group=GROUP_AI,
-        group_label=GROUP_LABELS[GROUP_AI],
+        group=GROUP_QUALITY,
+        group_label=GROUP_LABELS[GROUP_QUALITY],
     ),
     LeverDefinition(
         id=LeverId.SLA_TARGET,
@@ -178,7 +187,7 @@ LEVER_DEFINITIONS: tuple[LeverDefinition, ...] = (
         min=10,
         max=300,
         step=5,
-        tabs=BOTH_TABS,
+        tabs=PHONE_ONLY,
         group=GROUP_TARGETS,
         group_label=GROUP_LABELS[GROUP_TARGETS],
     ),
@@ -190,7 +199,7 @@ LEVER_DEFINITIONS: tuple[LeverDefinition, ...] = (
         min=0,
         max=25,
         step=0.5,
-        tabs=BOTH_TABS,
+        tabs=PHONE_ONLY,
         group=GROUP_TARGETS,
         group_label=GROUP_LABELS[GROUP_TARGETS],
     ),

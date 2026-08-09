@@ -25,7 +25,6 @@ export type SimulationTab = 'digital_channels' | 'phone_center'
 
 export type LeverId =
   | 'digital_adoption'
-  | 'ai_usage'
   | 'agent_ai'
   | 'customer_ai'
   | 'workforce_capacity'
@@ -39,20 +38,35 @@ export type LeverId =
   | 'automation_level'
   | 'knowledge_base_quality'
 
+/**
+ * Mirrors the backend enum, grouped the same way.
+ *
+ * The two tabs answer different questions, so they share only the outcomes a
+ * caller feels either way — satisfaction and first-contact resolution.
+ */
 export type KpiId =
+  // phone center: the queue
   | 'incoming_calls'
   | 'average_waiting_time'
   | 'abandonment_rate'
   | 'sla'
-  | 'customer_satisfaction'
-  | 'fcr'
-  | 'aht'
   | 'occupancy'
   | 'utilization'
   | 'queue_length'
   | 'required_agents'
+  | 'aht'
+  | 'agent_ai_usage'
+  // digital channels: deflection
+  | 'digital_contacts'
+  | 'containment_rate'
+  | 'escalated_contacts'
   | 'digital_adoption'
-  | 'ai_usage'
+  | 'self_service_rate'
+  | 'automation_level'
+  | 'customer_ai_usage'
+  // cross-channel outcomes
+  | 'customer_satisfaction'
+  | 'fcr'
 
 /** How to render a value. `percent` values arrive as fractions in [0, 1]. */
 export type KpiFormat = 'number' | 'percent' | 'duration'
@@ -62,7 +76,7 @@ export type Direction = 'higher_is_better' | 'lower_is_better' | 'neutral'
 
 export type Severity = 'positive' | 'info' | 'warning' | 'critical'
 
-export type LeverGroup = 'digital' | 'workforce' | 'ai' | 'targets'
+export type LeverGroup = 'digital' | 'workforce' | 'ai' | 'quality' | 'targets'
 
 export interface ServiceCenter {
   id: string
@@ -128,7 +142,11 @@ export interface Snapshot {
   captured_at: string
   baseline: BaselineMetrics
   kpis: KpiValue[]
-  trend: TrendPoint[]
+  /**
+   * Observed daily volume per tab, split by channel so each chart compares its
+   * own history against its own projection.
+   */
+  trend: Record<SimulationTab, TrendPoint[]>
   lever_defaults: Partial<Record<LeverId, number>>
   lever_bounds: Partial<Record<LeverId, LeverBounds>>
 }

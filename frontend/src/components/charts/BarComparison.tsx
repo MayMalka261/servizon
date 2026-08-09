@@ -4,14 +4,31 @@ import { ChartFrame, ChartTooltipBox } from './ChartFrame'
 import { EmptyChart } from './TrendChart'
 import { formatKpiValue } from '@/simulation/format'
 import { CHART_AXIS, CHART_GRID } from '@/simulation/theme'
-import type { KpiId, SimulatedKpi } from '@/types/api'
+import type { KpiId, SimulatedKpi, SimulationTab } from '@/types/api'
 
 /** Percentage metrics only — mixing seconds and counts on one axis is noise. */
-const SHOWN: KpiId[] = ['sla', 'customer_satisfaction', 'fcr', 'abandonment_rate', 'occupancy']
+const SHOWN: Record<SimulationTab, KpiId[]> = {
+  phone_center: ['sla', 'customer_satisfaction', 'fcr', 'abandonment_rate', 'occupancy'],
+  digital_channels: [
+    'containment_rate',
+    'digital_adoption',
+    'self_service_rate',
+    'automation_level',
+    'customer_satisfaction',
+  ],
+}
 
-export function BarComparison({ kpis, accent }: { kpis: SimulatedKpi[]; accent: string }) {
+export function BarComparison({
+  kpis,
+  tab,
+  accent,
+}: {
+  kpis: SimulatedKpi[]
+  tab: SimulationTab
+  accent: string
+}) {
   const data = kpis
-    .filter((kpi) => SHOWN.includes(kpi.id) && kpi.format === 'percent')
+    .filter((kpi) => SHOWN[tab].includes(kpi.id) && kpi.format === 'percent')
     .map((kpi) => ({
       name: kpi.label,
       current: Number((kpi.current * 100).toFixed(1)),

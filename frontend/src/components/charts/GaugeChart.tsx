@@ -10,10 +10,18 @@ import type { SimulatedKpi } from '@/types/api'
  * A single number cannot show distance-to-target; an arc can, and the tick
  * showing where the center is today makes the gap the subject of the chart.
  */
-export function GaugeChart({ kpi, target = 0.9 }: { kpi: SimulatedKpi | undefined; target?: number }) {
+export function GaugeChart({
+  kpi,
+  title,
+  target = 0.9,
+}: {
+  kpi: SimulatedKpi | undefined
+  title: string
+  target?: number
+}) {
   if (!kpi) {
     return (
-      <ChartFrame title="עמידה ב-SLA" height={170}>
+      <ChartFrame title={title} height={170}>
         <div className="flex h-full items-center justify-center text-xs text-[var(--color-ink-muted)]">
           אין נתונים להצגה
         </div>
@@ -36,7 +44,7 @@ export function GaugeChart({ kpi, target = 0.9 }: { kpi: SimulatedKpi | undefine
 
   return (
     <ChartFrame
-      title="עמידה ב-SLA"
+      title={title}
       description={`יעד ${formatPercent(target, 0)} · מצב נוכחי ${formatPercent(kpi.current)}`}
       height={170}
     >

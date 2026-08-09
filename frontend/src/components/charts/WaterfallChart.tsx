@@ -53,6 +53,12 @@ export function WaterfallChart({
             tick={{ fontSize: 10, fill: CHART_AXIS }}
             tickLine={false}
             axisLine={false}
+            // Anchor at zero. Left to itself Recharts fits the domain to the
+            // data, so a single moved lever produces an axis like -732…-728 —
+            // five meaningless ticks around one bar, with no sense of scale.
+            domain={([min, max]: readonly [number, number]) =>
+              [Math.min(0, min), Math.max(0, max)] as [number, number]
+            }
             tickFormatter={(value: number) => formatNumber(value)}
           />
           <YAxis

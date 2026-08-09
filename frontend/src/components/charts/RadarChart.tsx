@@ -12,16 +12,32 @@ import { ChartFrame, ChartTooltipBox } from './ChartFrame'
 import { EmptyChart } from './TrendChart'
 import { formatPercent } from '@/simulation/format'
 import { CHART_AXIS, CHART_GRID } from '@/simulation/theme'
-import type { KpiId, SimulatedKpi } from '@/types/api'
+import type { KpiId, SimulatedKpi, SimulationTab } from '@/types/api'
+
+interface Axis {
+  id: KpiId
+  label: string
+  invert?: boolean
+}
 
 /** Metrics shown on the radar, all normalised to "higher is better". */
-const AXES: Array<{ id: KpiId; label: string; invert?: boolean }> = [
-  { id: 'sla', label: 'SLA' },
-  { id: 'customer_satisfaction', label: 'שביעות רצון' },
-  { id: 'fcr', label: 'פתרון ראשון' },
-  { id: 'abandonment_rate', label: 'שימור פונים', invert: true },
-  { id: 'occupancy', label: 'תפוסה' },
-]
+const AXES: Record<SimulationTab, Axis[]> = {
+  phone_center: [
+    { id: 'sla', label: 'SLA' },
+    { id: 'customer_satisfaction', label: 'שביעות רצון' },
+    { id: 'fcr', label: 'פתרון ראשון' },
+    { id: 'abandonment_rate', label: 'שימור פונים', invert: true },
+    { id: 'occupancy', label: 'תפוסה' },
+  ],
+  digital_channels: [
+    { id: 'containment_rate', label: 'הכלה' },
+    { id: 'digital_adoption', label: 'אימוץ' },
+    { id: 'self_service_rate', label: 'שירות עצמי' },
+    { id: 'automation_level', label: 'אוטומציה' },
+    { id: 'customer_ai_usage', label: 'AI ללקוח' },
+    { id: 'customer_satisfaction', label: 'שביעות רצון' },
+  ],
+}
 
 /**
  * Overall service profile, current against scenario.
@@ -30,10 +46,10 @@ const AXES: Array<{ id: KpiId; label: string; invert?: boolean }> = [
  * grows outward is unambiguously better. Mixing directions on a radar makes
  * it unreadable.
  */
-export function ServiceRadarChart({ kpis }: { kpis: SimulatedKpi[] }) {
+export function ServiceRadarChart({ kpis, tab }: { kpis: SimulatedKpi[]; tab: SimulationTab }) {
   const byId = new Map(kpis.map((kpi) => [kpi.id, kpi]))
 
-  const data = AXES.flatMap((axis) => {
+  const data = AXES[tab].flatMap((axis) => {
     const kpi = byId.get(axis.id)
     if (!kpi || kpi.format !== 'percent') return []
     return [

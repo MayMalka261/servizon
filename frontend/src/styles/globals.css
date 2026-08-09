@@ -46,6 +46,10 @@
   --color-ai: #7c5cbf;
   --color-ai-soft: #efe9fa;
 
+  /* Service quality — the levers that sit on both tabs. */
+  --color-quality: #0f7a80;
+  --color-quality-soft: #e0f2f2;
+
   /* KPI semantics */
   --color-positive: #12855a;
   --color-positive-soft: #e0f5ec;

@@ -22,6 +22,8 @@ from app.simulation.engine import (
     evaluate,
     resolve_levers,
 )
+from app.simulation.kpis import kpis_for_tab
+from app.simulation.levers import levers_for_tab
 
 CENTER_TYPE = "technical_support"
 
@@ -199,7 +201,7 @@ class TestBaselineIdentity:
             captured_at=datetime.now(UTC),
             baseline=awkward,
             kpis=(),
-            trend=(),
+            trend={tab: () for tab in SimulationTab},
             lever_defaults=rounded_defaults,
             lever_bounds={},
         )
@@ -313,18 +315,22 @@ class TestDirectionality:
 
 class TestCompounding:
     def test_effects_accumulate(self, engine: SimulationEngine, snapshot: Snapshot) -> None:
+        """Two deflection levers must beat either one alone.
+
+        Run on the digital tab, which is where the deflection levers live.
+        """
         alone = engine.run(
-            snapshot, CENTER_TYPE, SimulationTab.PHONE_CENTER, {LeverId.DIGITAL_ADOPTION: 60.0}
+            snapshot, CENTER_TYPE, SimulationTab.DIGITAL_CHANNELS, {LeverId.DIGITAL_ADOPTION: 60.0}
         )
         together = engine.run(
             snapshot,
             CENTER_TYPE,
-            SimulationTab.PHONE_CENTER,
+            SimulationTab.DIGITAL_CHANNELS,
             {LeverId.DIGITAL_ADOPTION: 60.0, LeverId.SELF_SERVICE_RATE: 55.0},
         )
         assert (
-            _kpi(together, KpiId.INCOMING_CALLS).scenario
-            < _kpi(alone, KpiId.INCOMING_CALLS).scenario
+            _kpi(together, KpiId.ESCALATED_CONTACTS).scenario
+            < _kpi(alone, KpiId.ESCALATED_CONTACTS).scenario
         )
 
     def test_deflection_never_drives_volume_negative(
@@ -334,7 +340,7 @@ class TestCompounding:
         result = engine.run(
             snapshot,
             CENTER_TYPE,
-            SimulationTab.PHONE_CENTER,
+            SimulationTab.DIGITAL_CHANNELS,
             {
                 LeverId.DIGITAL_ADOPTION: 100.0,
                 LeverId.SELF_SERVICE_RATE: 100.0,
@@ -342,7 +348,7 @@ class TestCompounding:
                 LeverId.AUTOMATION_LEVEL: 100.0,
             },
         )
-        assert _kpi(result, KpiId.INCOMING_CALLS).scenario > 0
+        assert _kpi(result, KpiId.ESCALATED_CONTACTS).scenario > 0
 
 
 class TestLeverResolution:
@@ -466,3 +472,104 @@ class TestSnapshotStaleness:
         # The scenario is still evaluated — the user's work is never discarded.
         assert result.kpis
         assert result.snapshot_id == snapshot.id
+
+
+class TestTabsAreDistinct:
+    """The two tabs must answer different questions.
+
+    They previously shared ten of thirteen KPIs, so switching tabs looked like
+    it did nothing — and the digital tab showed "incoming calls" and "required
+    agents", which are phone concepts a digital manager cannot act on.
+    """
+
+    def test_kpi_sets_barely_overlap(self) -> None:
+        phone = {k.id for k in kpis_for_tab(SimulationTab.PHONE_CENTER)}
+        digital = {k.id for k in kpis_for_tab(SimulationTab.DIGITAL_CHANNELS)}
+
+        # Only the outcomes a caller feels regardless of channel are shared.
+        assert phone & digital == {KpiId.CUSTOMER_SATISFACTION, KpiId.FCR}
+        assert len(phone) >= 8
+        assert len(digital) >= 8
+
+    def test_queue_metrics_stay_off_the_digital_tab(self) -> None:
+        digital = {k.id for k in kpis_for_tab(SimulationTab.DIGITAL_CHANNELS)}
+        for phone_only in (
+            KpiId.INCOMING_CALLS,
+            KpiId.AVERAGE_WAITING_TIME,
+            KpiId.ABANDONMENT_RATE,
+            KpiId.SLA,
+            KpiId.QUEUE_LENGTH,
+            KpiId.OCCUPANCY,
+            KpiId.REQUIRED_AGENTS,
+        ):
+            assert phone_only not in digital
+
+    def test_deflection_metrics_stay_off_the_phone_tab(self) -> None:
+        phone = {k.id for k in kpis_for_tab(SimulationTab.PHONE_CENTER)}
+        for digital_only in (
+            KpiId.DIGITAL_CONTACTS,
+            KpiId.CONTAINMENT_RATE,
+            KpiId.ESCALATED_CONTACTS,
+            KpiId.SELF_SERVICE_RATE,
+            KpiId.AUTOMATION_LEVEL,
+        ):
+            assert digital_only not in phone
+
+    def test_lever_sets_differ(self) -> None:
+        phone = {lever.id for lever in levers_for_tab(SimulationTab.PHONE_CENTER)}
+        digital = {lever.id for lever in levers_for_tab(SimulationTab.DIGITAL_CHANNELS)}
+
+        assert LeverId.WORKFORCE_CAPACITY in phone
+        assert LeverId.WORKFORCE_CAPACITY not in digital
+        assert LeverId.SELF_SERVICE_RATE in digital
+        assert LeverId.SELF_SERVICE_RATE not in phone
+        # Digital adoption is the bridge: it drives digital volume and relieves
+        # the phone queue, so it is deliberately on both.
+        assert LeverId.DIGITAL_ADOPTION in phone & digital
+
+    def test_each_tab_produces_its_own_kpis(
+        self, engine: SimulationEngine, snapshot: Snapshot
+    ) -> None:
+        phone = engine.run(
+            snapshot, CENTER_TYPE, SimulationTab.PHONE_CENTER, {LeverId.DIGITAL_ADOPTION: 60.0}
+        )
+        digital = engine.run(
+            snapshot, CENTER_TYPE, SimulationTab.DIGITAL_CHANNELS, {LeverId.DIGITAL_ADOPTION: 60.0}
+        )
+        assert {k.id for k in phone.kpis} != {k.id for k in digital.kpis}
+
+    def test_both_tabs_always_recommend_something(
+        self, engine: SimulationEngine, snapshot: Snapshot
+    ) -> None:
+        """A tab with an empty recommendations panel looks broken."""
+        for tab in SimulationTab:
+            result = engine.run(
+                snapshot, CENTER_TYPE, tab, {LeverId.DIGITAL_ADOPTION: 62.0}
+            )
+            assert result.recommendations, tab
+            assert all(rec.body.strip() for rec in result.recommendations), tab
+
+    def test_containment_reads_the_baseline_rate_when_untouched(
+        self, engine: SimulationEngine, snapshot: Snapshot
+    ) -> None:
+        """Containment is anchored, not derived from the relative deflection.
+
+        Reading it off the survival factor alone would report that every center
+        currently resolves nothing without an agent.
+        """
+        result = engine.run(snapshot, CENTER_TYPE, SimulationTab.DIGITAL_CHANNELS, {})
+        contained = _kpi(result, KpiId.CONTAINMENT_RATE)
+        assert contained.scenario == pytest.approx(snapshot.baseline.self_service_rate, abs=1e-3)
+        assert contained.difference == 0
+
+    def test_deflection_raises_containment(
+        self, engine: SimulationEngine, snapshot: Snapshot
+    ) -> None:
+        result = engine.run(
+            snapshot,
+            CENTER_TYPE,
+            SimulationTab.DIGITAL_CHANNELS,
+            {LeverId.SELF_SERVICE_RATE: 70.0},
+        )
+        assert _kpi(result, KpiId.CONTAINMENT_RATE).difference > 0
+        assert _kpi(result, KpiId.ESCALATED_CONTACTS).difference < 0

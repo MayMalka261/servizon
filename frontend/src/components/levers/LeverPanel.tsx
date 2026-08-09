@@ -7,7 +7,7 @@ import { useLeverStore } from '@/stores/leverStore'
 import { ACCENTS } from '@/simulation/theme'
 import type { LeverBounds, LeverDefinition, LeverGroup, SimulationTab, Snapshot } from '@/types/api'
 
-const GROUP_ORDER: LeverGroup[] = ['digital', 'workforce', 'ai', 'targets']
+const GROUP_ORDER: LeverGroup[] = ['digital', 'workforce', 'ai', 'quality', 'targets']
 
 interface Props {
   levers: LeverDefinition[] | undefined

@@ -80,7 +80,8 @@ class LeverId(StrEnum):
     """Operational levers the user can move."""
 
     DIGITAL_ADOPTION = "digital_adoption"
-    AI_USAGE = "ai_usage"
+    # AI is steered through the two specific levers below rather than one
+    # blended control — they act at different points in the journey.
     AGENT_AI = "agent_ai"
     CUSTOMER_AI = "customer_ai"
     WORKFORCE_CAPACITY = "workforce_capacity"
@@ -96,21 +97,42 @@ class LeverId(StrEnum):
 
 
 class KpiId(StrEnum):
-    """Service metrics produced by the simulation engine."""
+    """Service metrics produced by the simulation engine.
 
+    Split by the question each one answers. The phone metrics describe a queue:
+    how long people wait and whether there are enough agents. The digital
+    metrics describe deflection: how much never needs an agent at all. Showing
+    a manager "incoming calls" while they are analysing the web channel is a
+    category error, which is why the two groups stay separate.
+    """
+
+    # -- phone center: the queue ---------------------------------------
     INCOMING_CALLS = "incoming_calls"
     AVERAGE_WAITING_TIME = "average_waiting_time"
     ABANDONMENT_RATE = "abandonment_rate"
     SLA = "sla"
-    CUSTOMER_SATISFACTION = "customer_satisfaction"
-    FCR = "fcr"
-    AHT = "aht"
     OCCUPANCY = "occupancy"
     UTILIZATION = "utilization"
     QUEUE_LENGTH = "queue_length"
     REQUIRED_AGENTS = "required_agents"
+    AHT = "aht"
+
+    # -- digital channels: deflection ----------------------------------
+    DIGITAL_CONTACTS = "digital_contacts"
+    CONTAINMENT_RATE = "containment_rate"
+    ESCALATED_CONTACTS = "escalated_contacts"
     DIGITAL_ADOPTION = "digital_adoption"
-    AI_USAGE = "ai_usage"
+    SELF_SERVICE_RATE = "self_service_rate"
+    AUTOMATION_LEVEL = "automation_level"
+    # Agent-side and customer-side AI are reported separately rather than as a
+    # blended figure: they are different programmes with different owners, and
+    # an average of the two is a number nobody can act on.
+    CUSTOMER_AI_USAGE = "customer_ai_usage"
+    AGENT_AI_USAGE = "agent_ai_usage"
+
+    # -- cross-channel outcomes ----------------------------------------
+    CUSTOMER_SATISFACTION = "customer_satisfaction"
+    FCR = "fcr"
 
 
 class KpiFormat(StrEnum):
