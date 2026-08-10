@@ -1,0 +1,31 @@
+# One-click deployment blueprint for Render.
+#
+# This exists so the project has a shareable, running URL. It is a *demo*
+# deployment of a tool designed for a closed network — the data it serves is
+# entirely synthetic, and there is no authentication layer.
+#
+# Deploy: https://render.com/deploy?repo=https://github.com/MayMalka261/servizon
+services:
+  - type: web
+    name: servizon
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    envVars:
+      # CSV seed data. The demo has no database to point at, and the whole
+      # purpose of the repository abstraction is that this is the only line
+      # that changes when there is one.
+      - key: SERVIZON_DATA_SOURCE
+        value: csv
+      # Scenarios are written to SQLite on the container's own disk. On the
+      # free plan that disk is ephemeral, so saved scenarios do not survive a
+      # restart — acceptable for a demo, and stated plainly rather than
+      # discovered later.
+      - key: SERVIZON_SCENARIOS_DATABASE_URL
+        value: sqlite:///./data/scenarios.db
+      - key: SERVIZON_REFRESH_MINUTES
+        value: "3"
+      - key: SERVIZON_LOG_LEVEL
+        value: INFO

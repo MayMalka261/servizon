@@ -182,11 +182,11 @@ CENTER_TYPE_LABELS: dict[CenterType, str] = {
 }
 
 DISTRICT_LABELS: dict[District, str] = {
-    District.NORTH: "פיקוד צפון",
-    District.CENTER: "פיקוד מרכז",
-    District.SOUTH: "פיקוד דרום",
-    District.JERUSALEM: "ירושלים",
-    District.HQ: "מטה כללי",
+    District.NORTH: "מחוז צפון",
+    District.CENTER: "מחוז מרכז",
+    District.SOUTH: "מחוז דרום",
+    District.JERUSALEM: "מחוז ירושלים",
+    District.HQ: "מטה ארצי",
 }
 
 STATUS_LABELS: dict[CenterStatus, str] = {
