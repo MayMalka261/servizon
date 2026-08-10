@@ -39,6 +39,14 @@ class Settings(BaseSettings):
     # -- Refresh -----------------------------------------------------------
     refresh_minutes: int = Field(default=3, ge=1, le=120)
     refresh_on_startup: bool = True
+    #: Disables the background scheduler.
+    #:
+    #: On a serverless host there is no long-lived process for it to run in:
+    #: each request may land in a fresh instance that is frozen the moment the
+    #: response is sent, so a timer started at import never fires. Data is
+    #: loaded once per cold start instead, which for a read-only demo is the
+    #: same thing. Irrelevant to the normal long-running deployment.
+    serverless: bool = False
 
     # -- Simulation --------------------------------------------------------
     coefficients_path: Path = BACKEND_ROOT / "config" / "coefficients.yaml"

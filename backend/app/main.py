@@ -47,20 +47,26 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     if settings.refresh_on_startup:
         data_service.refresh()
 
-    scheduler = RefreshScheduler(data_service, settings.refresh_minutes)
-    scheduler.start()
+    # A serverless instance is frozen between requests, so a timer started
+    # here would never fire. The cold-start load above is the refresh.
+    scheduler = None
+    if not settings.serverless:
+        scheduler = RefreshScheduler(data_service, settings.refresh_minutes)
+        scheduler.start()
     app.state.scheduler = scheduler
 
     log.info(
         "startup_complete",
         data_source=repository.name,
+        serverless=settings.serverless,
         centers=len(store.current().centers) if store.is_ready else 0,
     )
 
     try:
         yield
     finally:
-        scheduler.shutdown()
+        if scheduler is not None:
+            scheduler.shutdown()
 
 
 def create_app() -> FastAPI:

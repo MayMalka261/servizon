@@ -34,6 +34,7 @@ Thumbs.db
 # Env
 .env
 .env.*
+.vercel
 !.env.example
 
 # Playwright MCP session artifacts
