@@ -39,3 +39,6 @@ Thumbs.db
 
 # Playwright MCP session artifacts
 .playwright-mcp/
+
+.vercel
+.env*

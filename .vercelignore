@@ -1,0 +1,31 @@
+# `vercel deploy` uploads the local working directory as-is and does not
+# consult .gitignore, so anything left on disk from local runs — caches, logs,
+# a dev SQLite file — would otherwise ship in the deployment. This mirrors the
+# runtime-artifact entries in .gitignore for that reason.
+
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+node_modules/
+
+*.db
+*.sqlite3
+logs/
+backend/data/runtime/
+offline-bundle/
+
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+.env
+.env.*
+!.env.example
+
+.playwright-mcp/
+*.png
