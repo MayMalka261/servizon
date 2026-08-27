@@ -8,14 +8,8 @@ import type { KpiId, SimulatedKpi, SimulationTab } from '@/types/api'
 
 /** Percentage metrics only — mixing seconds and counts on one axis is noise. */
 const SHOWN: Record<SimulationTab, KpiId[]> = {
-  phone_center: ['sla', 'customer_satisfaction', 'fcr', 'abandonment_rate', 'occupancy'],
-  digital_channels: [
-    'containment_rate',
-    'digital_adoption',
-    'self_service_rate',
-    'automation_level',
-    'customer_satisfaction',
-  ],
+  phone_center: ['sla', 'abandonment_rate', 'fcr'],
+  digital_channels: ['customer_satisfaction', 'fcr'],
 }
 
 export function BarComparison({

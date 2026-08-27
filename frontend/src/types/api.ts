@@ -58,6 +58,7 @@ export type KpiId =
   | 'agent_ai_usage'
   // digital channels: deflection
   | 'digital_contacts'
+  | 'aht_digital'
   | 'containment_rate'
   | 'escalated_contacts'
   | 'digital_adoption'
@@ -130,6 +131,13 @@ export interface TrendPoint {
   value: number
 }
 
+/** The observed history a tab charts, one series per metric. */
+export interface TrendSeries {
+  volume: TrendPoint[]
+  abandonment: TrendPoint[]
+  aht: TrendPoint[]
+}
+
 export interface LeverBounds {
   min: number
   max: number
@@ -143,10 +151,10 @@ export interface Snapshot {
   baseline: BaselineMetrics
   kpis: KpiValue[]
   /**
-   * Observed daily volume per tab, split by channel so each chart compares its
-   * own history against its own projection.
+   * Observed daily history per tab, split by channel so each chart compares
+   * its own history against its own projection.
    */
-  trend: Record<SimulationTab, TrendPoint[]>
+  trend: Record<SimulationTab, TrendSeries>
   lever_defaults: Partial<Record<LeverId, number>>
   lever_bounds: Partial<Record<LeverId, LeverBounds>>
 }

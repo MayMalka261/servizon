@@ -6,7 +6,20 @@
  * the lever panel to the KPI cards to the charts.
  */
 
-import type { CenterStatus, LeverGroup, Severity } from '@/types/api'
+import type { CenterStatus, LeverGroup, Severity, SimulationTab } from '@/types/api'
+
+/**
+ * Each tab's own colour, carried through its cards, sliders, charts and the
+ * tab button itself.
+ *
+ * Two clearly separated hues rather than neighbouring blues: the tabs show
+ * different metrics entirely, and the colour is the fastest signal of which
+ * world you are looking at.
+ */
+export const TAB_ACCENT: Record<SimulationTab, string> = {
+  digital_channels: 'var(--color-brand)',
+  phone_center: 'var(--color-workforce)',
+}
 
 export interface Accent {
   /** CSS colour, for inline styles and chart props. */

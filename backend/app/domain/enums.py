@@ -119,6 +119,10 @@ class KpiId(StrEnum):
 
     # -- digital channels: deflection ----------------------------------
     DIGITAL_CONTACTS = "digital_contacts"
+    #: The same handle time the phone tab reports, under the digital tab's
+    #: wording. Two ids rather than one because a card's label is fixed by its
+    #: definition, and the two tabs name this quantity differently.
+    AHT_DIGITAL = "aht_digital"
     CONTAINMENT_RATE = "containment_rate"
     ESCALATED_CONTACTS = "escalated_contacts"
     DIGITAL_ADOPTION = "digital_adoption"

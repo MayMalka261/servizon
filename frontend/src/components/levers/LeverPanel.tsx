@@ -72,11 +72,11 @@ export function LeverPanel({ levers, snapshot, tab }: Props) {
   }
 
   return (
-    <aside className="card flex flex-col overflow-hidden" aria-label="מנופים תפעוליים">
-      <div className="flex items-center justify-between gap-2 border-b border-[var(--color-line)] px-4 py-3">
+    <aside className="card flex min-h-0 flex-col overflow-hidden" aria-label="פילטרים">
+      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-[var(--color-line)] px-4 py-3">
         <div className="flex items-center gap-2">
           <SlidersHorizontal className="h-4 w-4 text-[var(--color-ink-soft)]" />
-          <h2 className="font-semibold text-[var(--color-ink)]">מנוף תפעולי</h2>
+          <h2 className="font-semibold text-[var(--color-ink)]">פילטרים</h2>
         </div>
         {movedCount > 0 ? (
           <Button variant="ghost" size="sm" onClick={resetAll}>
@@ -129,7 +129,7 @@ export function LeverPanel({ levers, snapshot, tab }: Props) {
         })}
       </div>
 
-      <p className="border-t border-[var(--color-line)] px-4 py-2.5 text-[11px] leading-relaxed text-[var(--color-ink-muted)]">
+      <p className="shrink-0 border-t border-[var(--color-line)] px-4 py-2.5 text-[11px] leading-relaxed text-[var(--color-ink-muted)]">
         יש לגרור לצורך בדיקת ההשפעה. הסימולציה רצה על עותק זמני — נתוני המקור אינם משתנים.
       </p>
     </aside>

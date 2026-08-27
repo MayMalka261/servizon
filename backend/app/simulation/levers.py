@@ -21,6 +21,15 @@ BOTH_TABS: tuple[SimulationTab, ...] = (
 PHONE_ONLY: tuple[SimulationTab, ...] = (SimulationTab.PHONE_CENTER,)
 DIGITAL_ONLY: tuple[SimulationTab, ...] = (SimulationTab.DIGITAL_CHANNELS,)
 
+#: Belongs to no tab, so it never reaches the filter panel and is dropped from
+#: any request that names it.
+#:
+#: The definition is kept rather than deleted because the engine still reads
+#: these quantities — they simply hold their observed baseline value instead of
+#: being steerable. Removing them outright would mean unpicking the rule graph
+#: for controls that may well come back.
+HIDDEN: tuple[SimulationTab, ...] = ()
+
 GROUP_DIGITAL = "digital"
 GROUP_AI = "ai"
 GROUP_WORKFORCE = "workforce"
@@ -60,7 +69,7 @@ _PERCENT_LEVERS: frozenset[LeverId] = frozenset(
 LEVER_DEFINITIONS: tuple[LeverDefinition, ...] = (
     LeverDefinition(
         id=LeverId.DIGITAL_ADOPTION,
-        label="אימוץ דיגיטלי",
+        label="אחוז פניות דיגיטליות",
         tooltip="שיעור הפניות שמתחילות בערוץ דיגיטלי במקום בטלפון. העלאה מסיטה נפח מהמוקד הטלפוני.",
         unit="%",
         min=0,
@@ -78,7 +87,7 @@ LEVER_DEFINITIONS: tuple[LeverDefinition, ...] = (
         min=0,
         max=100,
         step=1,
-        tabs=DIGITAL_ONLY,
+        tabs=HIDDEN,
         group=GROUP_DIGITAL,
         group_label=GROUP_LABELS[GROUP_DIGITAL],
     ),
@@ -90,19 +99,19 @@ LEVER_DEFINITIONS: tuple[LeverDefinition, ...] = (
         min=0,
         max=100,
         step=1,
-        tabs=DIGITAL_ONLY,
+        tabs=HIDDEN,
         group=GROUP_DIGITAL,
         group_label=GROUP_LABELS[GROUP_DIGITAL],
     ),
     LeverDefinition(
         id=LeverId.WORKFORCE_CAPACITY,
-        label="קיבולת כוח אדם",
+        label="כמות נציגים",
         tooltip="מספר הנציגים המתוקננים במשמרת השיא. הטווח נגזר מהמצבת הנוכחית של המוקד.",
         unit="נציגים",
         min=1,
         max=500,
         step=1,
-        tabs=PHONE_ONLY,
+        tabs=BOTH_TABS,
         group=GROUP_WORKFORCE,
         group_label=GROUP_LABELS[GROUP_WORKFORCE],
         dynamic_bounds=True,
@@ -115,19 +124,19 @@ LEVER_DEFINITIONS: tuple[LeverDefinition, ...] = (
         min=4,
         max=24,
         step=1,
-        tabs=PHONE_ONLY,
+        tabs=HIDDEN,
         group=GROUP_WORKFORCE,
         group_label=GROUP_LABELS[GROUP_WORKFORCE],
     ),
     LeverDefinition(
         id=LeverId.AVERAGE_HANDLE_TIME,
-        label="זמן טיפול ממוצע",
+        label="זמן טיפול בפנייה",
         tooltip="משך טיפול ממוצע בפנייה, בשניות. קיצור משחרר קיבולת בלי להוסיף תקן.",
         unit="שנ'",
         min=30,
         max=900,
         step=5,
-        tabs=PHONE_ONLY,
+        tabs=BOTH_TABS,
         group=GROUP_WORKFORCE,
         group_label=GROUP_LABELS[GROUP_WORKFORCE],
     ),
@@ -139,7 +148,7 @@ LEVER_DEFINITIONS: tuple[LeverDefinition, ...] = (
         min=30,
         max=99,
         step=1,
-        tabs=BOTH_TABS,
+        tabs=HIDDEN,
         group=GROUP_QUALITY,
         group_label=GROUP_LABELS[GROUP_QUALITY],
     ),
@@ -151,7 +160,7 @@ LEVER_DEFINITIONS: tuple[LeverDefinition, ...] = (
         min=0,
         max=100,
         step=1,
-        tabs=PHONE_ONLY,
+        tabs=HIDDEN,
         group=GROUP_AI,
         group_label=GROUP_LABELS[GROUP_AI],
     ),
@@ -163,7 +172,7 @@ LEVER_DEFINITIONS: tuple[LeverDefinition, ...] = (
         min=0,
         max=100,
         step=1,
-        tabs=DIGITAL_ONLY,
+        tabs=HIDDEN,
         group=GROUP_AI,
         group_label=GROUP_LABELS[GROUP_AI],
     ),
@@ -175,19 +184,19 @@ LEVER_DEFINITIONS: tuple[LeverDefinition, ...] = (
         min=0,
         max=100,
         step=1,
-        tabs=BOTH_TABS,
+        tabs=HIDDEN,
         group=GROUP_QUALITY,
         group_label=GROUP_LABELS[GROUP_QUALITY],
     ),
     LeverDefinition(
         id=LeverId.SLA_TARGET,
-        label="יעד SLA",
+        label="SLA טלפוני",
         tooltip="הזמן שבתוכו יש לענות לפנייה. זהו יעד מדידה — הקשחתו מורידה את אחוז העמידה מבלי לשנות את זמן ההמתנה בפועל.",
         unit="שנ'",
         min=10,
         max=300,
         step=5,
-        tabs=PHONE_ONLY,
+        tabs=BOTH_TABS,
         group=GROUP_TARGETS,
         group_label=GROUP_LABELS[GROUP_TARGETS],
     ),
@@ -199,7 +208,7 @@ LEVER_DEFINITIONS: tuple[LeverDefinition, ...] = (
         min=0,
         max=25,
         step=0.5,
-        tabs=PHONE_ONLY,
+        tabs=HIDDEN,
         group=GROUP_TARGETS,
         group_label=GROUP_LABELS[GROUP_TARGETS],
     ),
@@ -211,7 +220,7 @@ LEVER_DEFINITIONS: tuple[LeverDefinition, ...] = (
         min=1,
         max=400,
         step=1,
-        tabs=PHONE_ONLY,
+        tabs=HIDDEN,
         group=GROUP_TARGETS,
         group_label=GROUP_LABELS[GROUP_TARGETS],
         dynamic_bounds=True,

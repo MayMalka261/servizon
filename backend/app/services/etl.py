@@ -40,7 +40,9 @@ from app.domain.models import (
     ServiceCenter,
     Snapshot,
     TrendPoint,
+    TrendSeries,
 )
+from app.simulation import rules as R
 from app.simulation.coefficients import Coefficients
 from app.simulation.engine import evaluate, extract_kpi
 from app.simulation.erlang import fit_patience
@@ -168,6 +170,7 @@ def build_dataset(
         center_type = CenterType(str(row.center_type))
         coefficients = coefficients_for(center_type.value)
 
+        baseline = _recalibrate_patience(baseline, coefficients, observed)
         values = evaluate(baseline, coefficients, {})
         kpis = tuple(
             KpiValue(
@@ -400,18 +403,72 @@ def _channel_config(channels: pd.DataFrame, interactions: pd.DataFrame) -> dict[
     }
 
 
+def _recalibrate_patience(
+    baseline: BaselineMetrics,
+    coefficients: Coefficients,
+    observed: dict[str, float],
+) -> BaselineMetrics:
+    """Re-fit caller patience so the model reproduces observed abandonment.
+
+    The first fit inverts the abandonment formula using the *observed* waiting
+    time. But the engine never sees that number: it computes abandonment from
+    the ASA that Erlang C predicts, which is a different figure. The result was
+    a baseline that disagreed with its own history — SC-111 reported 20.6%
+    against 48% actually observed. Harmless while nothing plotted the history,
+    and immediately visible once a trend chart sits beside the card.
+
+    Patience does not influence ASA (that comes from arrival rate, handle time
+    and staffing alone), so one extra pass is enough: evaluate to obtain the
+    model's ASA and queue tolerance, then solve
+
+        observed = 1 - exp(-ASA_model / (patience * tolerance))
+
+    for patience. Abandonment then matches observation at baseline by
+    construction, and every scenario moves away from a truthful starting point.
+    """
+    target = observed.get("observed_abandonment", 0.0)
+    # Nothing to fit against at the extremes: no abandonment gives infinite
+    # patience, total abandonment gives zero.
+    if not 1e-4 < target < 0.95:
+        return baseline
+
+    values = evaluate(baseline, coefficients, {})
+    asa = float(values[R.V_ASA])
+    tolerance = float(values[R.V_QUEUE_TOLERANCE])
+    if asa <= 0 or tolerance <= 0:
+        return baseline
+
+    patience = -asa / (tolerance * np.log(1.0 - target))
+    if not np.isfinite(patience) or patience <= 0:
+        return baseline
+
+    return baseline.model_copy(update={"patience_sec": float(np.clip(patience, 20.0, 900.0))})
+
+
+def _points(index: pd.Index, values: pd.Series, digits: int) -> tuple[TrendPoint, ...]:
+    return tuple(
+        TrendPoint(label=day.strftime("%d/%m"), value=round(float(value), digits))
+        for day, value in zip(index, values, strict=True)
+    )
+
+
 def _build_trend(
     interactions: pd.DataFrame,
-) -> dict[SimulationTab, tuple[TrendPoint, ...]]:
-    """Observed daily volume, split the same way the tabs are.
+) -> dict[SimulationTab, TrendSeries]:
+    """Observed daily history, split the same way the tabs are.
 
     The phone series is what the queueing model projects against; the digital
     series is what the deflection metrics project against. Keeping them apart
     means neither chart draws a scenario line across history it does not
     describe.
+
+    Abandonment and handle time are ratios, so they are aggregated as daily
+    totals divided by daily totals — never as a mean of per-bucket rates, which
+    would weight a quiet 03:00 bucket the same as the peak hour and flatten the
+    very variation the chart exists to show.
     """
     if interactions.empty:
-        return {tab: () for tab in SimulationTab}
+        return {tab: TrendSeries() for tab in SimulationTab}
 
     digital_names = {c.value for c in DIGITAL_CHANNELS}
     frames = {
@@ -423,19 +480,28 @@ def _build_trend(
         ],
     }
 
-    series: dict[SimulationTab, tuple[TrendPoint, ...]] = {}
+    series: dict[SimulationTab, TrendSeries] = {}
     for tab, frame in frames.items():
         if frame.empty:
-            series[tab] = ()
+            series[tab] = TrendSeries()
             continue
-        daily = (
-            frame.assign(day=frame["ts_bucket"].dt.normalize())
-            .groupby("day", sort=True)["offered"]
-            .sum()
+
+        daily = frame.assign(day=frame["ts_bucket"].dt.normalize()).groupby("day", sort=True)
+        offered = daily["offered"].sum()
+        abandoned = daily["abandoned"].sum()
+        # Volume-weighted: sum(aht * offered) / sum(offered).
+        weighted_aht = daily.apply(
+            lambda g: float((g["aht_sec"].fillna(0.0) * g["offered"].fillna(0.0)).sum()),
+            include_groups=False,
         )
-        series[tab] = tuple(
-            TrendPoint(label=day.strftime("%d/%m"), value=round(float(value), 1))
-            for day, value in daily.items()
+
+        safe_offered = offered.replace(0.0, np.nan)
+        series[tab] = TrendSeries(
+            volume=_points(offered.index, offered, 1),
+            abandonment=_points(
+                offered.index, (abandoned / safe_offered).fillna(0.0), 4
+            ),
+            aht=_points(offered.index, (weighted_aht / safe_offered).fillna(0.0), 1),
         )
     return series
 

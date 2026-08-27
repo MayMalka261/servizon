@@ -7,7 +7,7 @@ computation behind it — which is the whole point in a decision-support tool.
 
 from __future__ import annotations
 
-from app.domain.enums import KpiId, LeverId, Severity
+from app.domain.enums import KpiId, LeverId, Severity, SimulationTab
 from app.domain.models import BaselineMetrics, Recommendation, SimulatedKpi
 from app.simulation import rules as R
 from app.simulation.levers import LEVERS_BY_ID, is_percent_lever
@@ -45,6 +45,7 @@ def _by_id(kpis: tuple[SimulatedKpi, ...]) -> dict[KpiId, SimulatedKpi]:
 def build_recommendations(
     *,
     kpis: tuple[SimulatedKpi, ...],
+    tab: SimulationTab,
     moved_levers: dict[LeverId, tuple[float, float]],
     baseline: BaselineMetrics,
     scenario_values: dict[str, float],
@@ -63,14 +64,22 @@ def build_recommendations(
     indexed = _by_id(kpis)
     found: list[Recommendation] = []
 
-    # Each block reads only the KPIs its tab publishes and returns nothing when
-    # they are absent, so the same builder serves both tabs without either one
-    # commenting on metrics the user cannot see.
-    found.extend(_headline(indexed, moved_levers))
-    found.extend(_digital_headline(indexed, moved_levers))
-    found.extend(_capacity_warnings(indexed, scenario_values, baseline))
-    found.extend(_target_checks(indexed, baseline, levers))
-    found.extend(_staffing_gap(indexed, baseline, levers))
+    # The headline is picked by tab rather than by which KPIs happen to be
+    # present. The builder now sees every metric the model computes, so
+    # presence would select both and the panel would open with two competing
+    # summaries of the same scenario.
+    if tab is SimulationTab.DIGITAL_CHANNELS:
+        found.extend(_digital_headline(indexed, moved_levers))
+    else:
+        found.extend(_headline(indexed, moved_levers))
+
+    # Queue advice belongs to the phone tab only. It reasons about abandonment,
+    # occupancy and headcount — none of which the digital tab displays — and
+    # advice about a number the reader cannot see reads as a non sequitur.
+    if tab is SimulationTab.PHONE_CENTER:
+        found.extend(_capacity_warnings(indexed, scenario_values, baseline))
+        found.extend(_target_checks(indexed, baseline, levers))
+        found.extend(_staffing_gap(indexed, baseline, levers))
 
     order = {
         Severity.CRITICAL: 0,

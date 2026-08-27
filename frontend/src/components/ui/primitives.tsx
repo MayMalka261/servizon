@@ -6,7 +6,12 @@
  * popovers orient correctly in RTL without per-component handling.
  */
 
-import { forwardRef, type InputHTMLAttributes, type ReactNode } from 'react'
+import {
+  forwardRef,
+  type CSSProperties,
+  type InputHTMLAttributes,
+  type ReactNode,
+} from 'react'
 import * as SliderPrimitive from '@radix-ui/react-slider'
 import * as TooltipPrimitive from '@radix-ui/react-tooltip'
 import * as TabsPrimitive from '@radix-ui/react-tabs'
@@ -215,16 +220,30 @@ export function TabsList({ children }: { children: ReactNode }) {
   )
 }
 
-export function TabsTrigger({ value, children }: { value: string; children: ReactNode }) {
+export function TabsTrigger({
+  value,
+  accent,
+  children,
+}: {
+  value: string
+  /** The tab's identity colour, applied when it is the active one. */
+  accent?: string
+  children: ReactNode
+}) {
   return (
     <TabsPrimitive.Trigger
       value={value}
+      style={accent ? ({ ['--tab-accent' as string]: accent } as CSSProperties) : undefined}
       className={cn(
         'inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium',
         'transition-all duration-[var(--duration-base)] ease-[var(--ease-out-soft)]',
         'text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]',
-        'data-[state=active]:bg-[var(--color-surface)] data-[state=active]:text-[var(--color-brand)]',
+        'data-[state=active]:bg-[var(--color-surface)]',
+        'data-[state=active]:text-[var(--tab-accent,var(--color-brand))]',
         'data-[state=active]:shadow-[var(--shadow-raised)]',
+        // A filled underline in the tab's own colour, so the active tab is
+        // identifiable by hue and not only by elevation.
+        'data-[state=active]:ring-1 data-[state=active]:ring-[var(--tab-accent,var(--color-brand))]/35',
       )}
     >
       {children}

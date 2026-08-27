@@ -30,7 +30,7 @@ from app.domain.models import (
 )
 from app.simulation import rules as R
 from app.simulation.coefficients import Coefficients, load_coefficients
-from app.simulation.kpis import KPIS_BY_ID, kpis_for_tab
+from app.simulation.kpis import KPI_DEFINITIONS, KPIS_BY_ID, kpis_for_tab
 from app.simulation.levers import LEVERS_BY_ID, to_model_units
 from app.simulation.recommendations import build_recommendations
 
@@ -120,6 +120,7 @@ _KPI_SOURCES: dict[KpiId, str] = {
     KpiId.CUSTOMER_SATISFACTION: R.V_SATISFACTION,
     KpiId.FCR: R.V_EFFECTIVE_FCR,
     KpiId.AHT: R.V_EFFECTIVE_AHT,
+    KpiId.AHT_DIGITAL: R.V_EFFECTIVE_AHT,
     KpiId.OCCUPANCY: R.V_OCCUPANCY,
     KpiId.UTILIZATION: R.V_UTILIZATION,
     KpiId.QUEUE_LENGTH: R.V_QUEUE_LENGTH,
@@ -319,8 +320,21 @@ class SimulationEngine:
         moved = _moved_levers(snapshot, display)
         waterfall = self._waterfall(baseline, coefficients, model, moved, tab)
 
+        # Recommendations reason over every metric the model produces, not just
+        # the cards this tab happens to show. Curating the interface should
+        # narrow what is displayed, never what the advice is allowed to know.
+        all_kpis = tuple(
+            _build_simulated_kpi(
+                definition.id,
+                extract_kpi(definition.id, current_values, baseline, {}),
+                extract_kpi(definition.id, scenario_values, baseline, model),
+            )
+            for definition in KPI_DEFINITIONS
+        )
+
         recommendations = build_recommendations(
-            kpis=kpis,
+            kpis=all_kpis,
+            tab=tab,
             moved_levers=moved,
             baseline=baseline,
             scenario_values=scenario_values,

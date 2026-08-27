@@ -121,6 +121,19 @@ class TrendPoint(Frozen):
     value: float
 
 
+class TrendSeries(Frozen):
+    """The observed history a tab charts, one series per metric.
+
+    Grouped per tab rather than globally because the two tabs measure different
+    channels: the phone series counts calls, the digital series counts digital
+    contacts, and neither should be drawn against the other's scenario line.
+    """
+
+    volume: tuple[TrendPoint, ...] = ()
+    abandonment: tuple[TrendPoint, ...] = ()
+    aht: tuple[TrendPoint, ...] = ()
+
+
 class LeverBounds(Frozen):
     """Per-center range for a lever whose scale depends on the center."""
 
@@ -145,7 +158,7 @@ class Snapshot(Frozen):
     #: compares its own history against its own projection — drawing a
     #: phone-only scenario line across all-channel history would overstate the
     #: deflection every time.
-    trend: dict[SimulationTab, tuple[TrendPoint, ...]]
+    trend: dict[SimulationTab, TrendSeries]
     #: Per-center starting position of each lever, in display units.
     lever_defaults: dict[LeverId, float]
     #: Overrides for levers whose range scales with the center's size.

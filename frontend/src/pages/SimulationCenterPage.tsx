@@ -4,9 +4,8 @@ import { MessageSquare, Phone, ServerCrash } from 'lucide-react'
 
 import { BarComparison } from '@/components/charts/BarComparison'
 import { GaugeChart } from '@/components/charts/GaugeChart'
-import { ServiceRadarChart } from '@/components/charts/RadarChart'
+import { MetricTrendChart } from '@/components/charts/MetricTrendChart'
 import { TrendChart } from '@/components/charts/TrendChart'
-import { WaterfallChart } from '@/components/charts/WaterfallChart'
 import { KpiCard } from '@/components/kpi/KpiCard'
 import { BaselineMovedNotice } from '@/components/layout/BaselineMovedNotice'
 import { CenterHeader } from '@/components/layout/CenterHeader'
@@ -16,15 +15,9 @@ import { ScenarioBar } from '@/components/scenarios/ScenarioBar'
 import { Button, Card, Skeleton, Tabs, TabsList, TabsTrigger } from '@/components/ui'
 import { useCenter, useLevers } from '@/hooks/useCenters'
 import { useSimulation, useSnapshot } from '@/hooks/useSimulation'
-import { useHasScenario, useLeverStore } from '@/stores/leverStore'
-import { ACCENTS } from '@/simulation/theme'
-import type { KpiId, SimulationTab } from '@/types/api'
-
-/** The tab drives the accent colour carried through cards, sliders and charts. */
-const TAB_ACCENT: Record<SimulationTab, string> = {
-  digital_channels: ACCENTS.digital.color,
-  phone_center: ACCENTS.workforce.color,
-}
+import { useLeverStore } from '@/stores/leverStore'
+import { TAB_ACCENT } from '@/simulation/theme'
+import type { KpiId, SimulatedKpi, SimulationTab } from '@/types/api'
 
 const DIGITAL_CHANNEL_LABELS = 'אתר · וואטסאפ · אימייל · טפסים · צ׳אט'
 
@@ -33,7 +26,6 @@ export function SimulationCenterPage() {
 
   const tab = useLeverStore((state) => state.tab)
   const setTab = useLeverStore((state) => state.setTab)
-  const hasScenario = useHasScenario()
 
   const { data: center, isError: centerError, error } = useCenter(centerId)
   const { data: snapshot } = useSnapshot(centerId)
@@ -48,23 +40,49 @@ export function SimulationCenterPage() {
   }, [])
 
   const accent = TAB_ACCENT[tab]
+  const isPhone = tab === 'phone_center'
 
-  // Each tab has its own headline pair: the metric the gauge tracks against a
-  // target, and the volume the trend line projects. Naming them per tab keeps
-  // the charts honest when the KPI sets no longer overlap.
-  const headline = useMemo(() => {
-    const find = (id: KpiId) => result?.kpis.find((kpi) => kpi.id === id)
-    return tab === 'phone_center'
-      ? { gauge: find('sla'), volume: find('incoming_calls') }
-      : { gauge: find('containment_rate'), volume: find('digital_contacts') }
-  }, [result, tab])
+  // The charts each tab shows are a fixed, curated set, so the metrics they
+  // need are looked up by name rather than taken from whatever happens to be
+  // in the KPI list.
+  const kpi = useMemo(() => {
+    const find = (id: KpiId) => result?.kpis.find((item) => item.id === id)
+    return {
+      sla: find('sla'),
+      calls: find('incoming_calls'),
+      abandonment: find('abandonment_rate'),
+      aht: find('aht'),
+      digitalContacts: find('digital_contacts'),
+      digitalAht: find('aht_digital'),
+    }
+  }, [result])
 
-  const gaugeConfig =
-    tab === 'phone_center'
-      ? { title: 'עמידה ב-SLA', target: 0.9 }
-      : // Sixty percent contained is a common ambition for a digital estate,
-        // not a regulated threshold — stated as a target, not a rule.
-        { title: 'שיעור הכלה דיגיטלי', target: 0.6 }
+  const series = snapshot?.trend?.[tab]
+
+  // Digital share is the filter's own value, so the gauge is built from the
+  // store rather than from a KPI card. Reading it back off the server would be
+  // the same number by a longer route.
+  const adoptionValue = useLeverStore((state) => state.values.digital_adoption)
+  const adoptionBaseline = useLeverStore((state) => state.defaults.digital_adoption)
+
+  const digitalShare: SimulatedKpi | undefined = useMemo(() => {
+    if (adoptionBaseline === undefined) return undefined
+    const current = adoptionBaseline / 100
+    const scenario = (adoptionValue ?? adoptionBaseline) / 100
+    const difference = scenario - current
+    return {
+      id: 'digital_adoption',
+      label: 'אחוז פניות דיגיטלי',
+      format: 'percent',
+      direction: 'higher_is_better',
+      current,
+      scenario,
+      difference,
+      percentage: current === 0 ? 0 : (difference / current) * 100,
+      trend: difference === 0 ? 0 : difference > 0 ? 1 : -1,
+      is_improvement: difference > 0,
+    }
+  }, [adoptionValue, adoptionBaseline])
 
   if (centerError) {
     return (
@@ -86,49 +104,62 @@ export function SimulationCenterPage() {
   }
 
   return (
-    <main className="mx-auto max-w-[1800px] space-y-4 p-4 sm:p-6">
-      {center ? <CenterHeader center={center} snapshot={snapshot} /> : <Skeleton className="h-28" />}
+    // The page itself never scrolls. It fills the viewport below the header,
+    // and the three columns scroll independently — dragging a filter should not
+    // move the metric you are watching off screen, which is exactly what a
+    // single page-level scrollbar caused.
+    <main
+      className="mx-auto flex max-w-[1800px] flex-col gap-4 p-4 sm:p-6 xl:h-[calc(100dvh-4rem)] xl:overflow-hidden"
+      style={{ ['--tab-accent' as string]: accent }}
+    >
+      <div className="shrink-0 space-y-4">
+        {center ? (
+          <CenterHeader center={center} snapshot={snapshot} />
+        ) : (
+          <Skeleton className="h-28" />
+        )}
 
-      <BaselineMovedNotice />
+        <BaselineMovedNotice />
 
-      <Tabs value={tab} onValueChange={(value) => setTab(value as SimulationTab)}>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <TabsList>
-            <TabsTrigger value="digital_channels">
-              <MessageSquare className="h-4 w-4" />
-              ערוצים דיגיטליים
-            </TabsTrigger>
-            <TabsTrigger value="phone_center">
-              <Phone className="h-4 w-4" />
-              מוקד טלפוני
-            </TabsTrigger>
-          </TabsList>
+        <Tabs value={tab} onValueChange={(value) => setTab(value as SimulationTab)}>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <TabsList>
+              <TabsTrigger value="digital_channels" accent={TAB_ACCENT.digital_channels}>
+                <MessageSquare className="h-4 w-4" />
+                ערוצים דיגיטליים
+              </TabsTrigger>
+              <TabsTrigger value="phone_center" accent={TAB_ACCENT.phone_center}>
+                <Phone className="h-4 w-4" />
+                מוקד טלפוני
+              </TabsTrigger>
+            </TabsList>
 
-          <p className="text-xs text-[var(--color-ink-muted)]">
-            {tab === 'digital_channels'
-              ? DIGITAL_CHANNEL_LABELS
-              : 'תור טלפוני · מודל Erlang C על שעת השיא'}
-          </p>
-        </div>
-      </Tabs>
+            <p className="text-xs text-[var(--color-ink-muted)]">
+              {isPhone ? 'תור טלפוני · מודל Erlang C על שעת השיא' : DIGITAL_CHANNEL_LABELS}
+            </p>
+          </div>
+        </Tabs>
 
-      {centerId ? <ScenarioBar centerId={centerId} tab={tab} /> : null}
+        {centerId ? <ScenarioBar centerId={centerId} tab={tab} /> : null}
+      </div>
 
-      {/* Three columns, matching the deck: levers, metrics, charts. Stacks on
-          narrow screens, where the lever panel comes first because that is
-          what the user came to touch.
-
-          Keyed on the tab so switching replays the entry animation — the two
-          tabs show different metrics, and a cascade makes that legible in a
-          way an instant swap does not. */}
-      <div key={tab} className="grid gap-4 xl:grid-cols-[300px_minmax(0,1fr)_360px]">
+      {/* Three columns: filters, metrics, charts. Each is its own scroll
+          container. Stacks on narrow screens, where the filter panel comes
+          first because that is what the user came to touch. */}
+      <div
+        key={tab}
+        className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[300px_minmax(0,1fr)_380px]"
+      >
         <LeverPanel levers={levers} snapshot={snapshot} tab={tab} />
 
-        <section className="space-y-4" aria-label="מדדי השירות">
+        <section
+          className="min-h-0 space-y-4 xl:overflow-y-auto xl:pe-1"
+          aria-label="מדדי השירות"
+        >
           <div>
             <h2 className="font-semibold text-[var(--color-ink)]">מדדי השירות</h2>
             <p className="text-xs text-[var(--color-ink-muted)]">
-              מדד המושפע משינוי המנוף התפעולי ומגמת השינוי מול המצב הנוכחי.
+              מדד המושפע משינוי הפילטרים ומגמת השינוי מול המצב הנוכחי.
             </p>
           </div>
 
@@ -140,8 +171,8 @@ export function SimulationCenterPage() {
             </div>
           ) : (
             <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">
-              {result.kpis.map((kpi, index) => (
-                <KpiCard key={kpi.id} kpi={kpi} accent={accent} index={index} />
+              {result.kpis.map((item, index) => (
+                <KpiCard key={item.id} kpi={item} accent={accent} index={index} />
               ))}
             </div>
           )}
@@ -149,21 +180,57 @@ export function SimulationCenterPage() {
           {result ? <RecommendationList recommendations={result.recommendations} /> : null}
         </section>
 
-        <section className="space-y-4" aria-label="גרפים">
-          <GaugeChart
-            kpi={headline.gauge}
-            title={gaugeConfig.title}
-            target={gaugeConfig.target}
-          />
-          <TrendChart
-            trend={snapshot?.trend?.[tab] ?? []}
-            scenarioDaily={headline.volume?.scenario}
-            title={tab === 'phone_center' ? 'מגמת נפח שיחות' : 'מגמת נפח פניות דיגיטליות'}
-            accent={accent}
-          />
-          <WaterfallChart steps={result?.waterfall ?? []} hasScenario={hasScenario} />
-          <BarComparison kpis={result?.kpis ?? []} tab={tab} accent={accent} />
-          <ServiceRadarChart kpis={result?.kpis ?? []} tab={tab} />
+        <section
+          className="min-h-0 space-y-4 xl:overflow-y-auto xl:pe-1"
+          aria-label="גרפים"
+        >
+          {isPhone ? (
+            <>
+              <GaugeChart kpi={kpi.sla} title="עמידה ב-SLA" target={0.9} />
+              <TrendChart
+                trend={series?.volume ?? []}
+                scenarioDaily={kpi.calls?.scenario}
+                title="מגמת נפח שיחות"
+                accent={accent}
+              />
+              <BarComparison kpis={result?.kpis ?? []} tab={tab} accent={accent} />
+              <MetricTrendChart
+                title="מגמת נטישה"
+                description="שיעור הנטישה היומי בפועל, מול הצפוי בתרחיש."
+                points={series?.abandonment ?? []}
+                scenario={kpi.abandonment?.scenario}
+                format="percent"
+                accent={accent}
+              />
+              <MetricTrendChart
+                title="זמן טיפול ממוצע"
+                description="זמן הטיפול היומי בפועל, מול הצפוי בתרחיש."
+                points={series?.aht ?? []}
+                scenario={kpi.aht?.scenario}
+                format="duration"
+                accent={accent}
+              />
+            </>
+          ) : (
+            <>
+              <GaugeChart kpi={digitalShare} title="אחוז פניות דיגיטלי" target={0.6} />
+              <TrendChart
+                trend={series?.volume ?? []}
+                scenarioDaily={kpi.digitalContacts?.scenario}
+                title="כמות פניות דיגיטליות לאורך זמן"
+                accent={accent}
+              />
+              <BarComparison kpis={result?.kpis ?? []} tab={tab} accent={accent} />
+              <MetricTrendChart
+                title="מגמת זמן טיפול בפניות"
+                description="זמן הטיפול היומי בפועל, מול הצפוי בתרחיש."
+                points={series?.aht ?? []}
+                scenario={kpi.digitalAht?.scenario}
+                format="duration"
+                accent={accent}
+              />
+            </>
+          )}
         </section>
       </div>
     </main>
