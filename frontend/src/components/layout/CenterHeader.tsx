@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { ChevronLeft, Clock, Users } from 'lucide-react'
+import { ArrowRight, ChevronLeft, Clock, Users } from 'lucide-react'
 
 import { Badge } from '@/components/ui'
 import { STATUS_STYLES } from '@/simulation/theme'
@@ -34,16 +34,30 @@ export function CenterHeader({
         className="pointer-events-none absolute inset-0 opacity-[0.07]"
         style={{ background: `linear-gradient(to left, ${accent}, transparent 45%)` }}
       />
-      <nav
-        aria-label="ניווט"
-        className="relative mb-2 flex items-center gap-1 text-xs text-[var(--color-ink-muted)]"
-      >
-        <Link to="/" className="transition-colors hover:text-[var(--color-brand)]">
-          מוקדי שירות
+      <div className="relative mb-2 flex items-center justify-between gap-2">
+        <nav
+          aria-label="ניווט"
+          className="flex items-center gap-1 text-xs text-[var(--color-ink-muted)]"
+        >
+          <Link to="/" className="transition-colors hover:text-[var(--color-brand)]">
+            מוקדי שירות
+          </Link>
+          <ChevronLeft className="h-3 w-3" />
+          <span className="font-medium text-[var(--color-ink-soft)]">מרכז הסימולציה</span>
+        </nav>
+
+        <Link
+          to="/"
+          className={cn(
+            'inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-line-strong)]',
+            'bg-[var(--color-surface)] px-3 py-1.5 text-xs font-medium text-[var(--color-ink-soft)]',
+            'transition-colors hover:border-[var(--color-brand)] hover:text-[var(--color-brand)]',
+          )}
+        >
+          <ArrowRight className="h-3.5 w-3.5" />
+          חזרה לרשימת המוקדים
         </Link>
-        <ChevronLeft className="h-3 w-3" />
-        <span className="font-medium text-[var(--color-ink-soft)]">מרכז הסימולציה</span>
-      </nav>
+      </div>
 
       <div className="relative flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
