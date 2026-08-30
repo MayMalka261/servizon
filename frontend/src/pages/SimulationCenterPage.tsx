@@ -57,7 +57,17 @@ export function SimulationCenterPage() {
     }
   }, [result])
 
-  const series = snapshot?.trend?.[tab]
+  const trendWindow = useLeverStore((state) => state.trendWindow)
+
+  const series = useMemo(() => {
+    const raw = snapshot?.trend?.[tab]
+    if (!raw) return undefined
+    return {
+      volume: raw.volume.slice(-trendWindow),
+      abandonment: raw.abandonment.slice(-trendWindow),
+      aht: raw.aht.slice(-trendWindow),
+    }
+  }, [snapshot, tab, trendWindow])
 
   // Digital share is the filter's own value, so the gauge is built from the
   // store rather than from a KPI card. Reading it back off the server would be
@@ -153,24 +163,24 @@ export function SimulationCenterPage() {
         <LeverPanel levers={levers} snapshot={snapshot} tab={tab} />
 
         <section
-          className="min-h-0 space-y-4 xl:overflow-y-auto xl:pe-1"
+          className="flex min-h-0 flex-col gap-3 xl:overflow-y-auto xl:pe-1"
           aria-label="מדדי השירות"
         >
-          <div>
-            <h2 className="font-semibold text-[var(--color-ink)]">מדדי השירות</h2>
-            <p className="text-xs text-[var(--color-ink-muted)]">
+          <div className="shrink-0">
+            <h2 className="text-sm font-semibold text-[var(--color-ink)]">מדדי השירות</h2>
+            <p className="text-[11px] text-[var(--color-ink-muted)]">
               מדד המושפע משינוי הפילטרים ומגמת השינוי מול המצב הנוכחי.
             </p>
           </div>
 
           {simulationPending || !result ? (
-            <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">
+            <div className="grid shrink-0 gap-2.5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
               {Array.from({ length: 6 }, (_, index) => (
-                <Skeleton key={index} className="h-36" />
+                <Skeleton key={index} className="h-28" />
               ))}
             </div>
           ) : (
-            <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">
+            <div className="grid shrink-0 gap-2.5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
               {result.kpis.map((item, index) => (
                 <KpiCard key={item.id} kpi={item} accent={accent} index={index} />
               ))}
@@ -192,6 +202,7 @@ export function SimulationCenterPage() {
                 scenarioDaily={kpi.calls?.scenario}
                 title="מגמת נפח שיחות"
                 accent={accent}
+                windowDays={trendWindow}
               />
               <BarComparison kpis={result?.kpis ?? []} tab={tab} accent={accent} />
               <MetricTrendChart
@@ -219,6 +230,7 @@ export function SimulationCenterPage() {
                 scenarioDaily={kpi.digitalContacts?.scenario}
                 title="כמות פניות דיגיטליות לאורך זמן"
                 accent={accent}
+                windowDays={trendWindow}
               />
               <BarComparison kpis={result?.kpis ?? []} tab={tab} accent={accent} />
               <MetricTrendChart

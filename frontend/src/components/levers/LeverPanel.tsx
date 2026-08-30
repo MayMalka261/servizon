@@ -1,13 +1,20 @@
 import { useMemo } from 'react'
-import { RotateCcw, SlidersHorizontal } from 'lucide-react'
+import { CalendarRange, RotateCcw, SlidersHorizontal } from 'lucide-react'
 
 import { Button, Skeleton } from '@/components/ui'
 import { LeverControl } from './LeverControl'
-import { useLeverStore } from '@/stores/leverStore'
+import { useLeverStore, type TrendWindow } from '@/stores/leverStore'
+import { cn } from '@/lib/utils'
 import { ACCENTS } from '@/simulation/theme'
 import type { LeverBounds, LeverDefinition, LeverGroup, SimulationTab, Snapshot } from '@/types/api'
 
 const GROUP_ORDER: LeverGroup[] = ['digital', 'workforce', 'ai', 'quality', 'targets']
+
+const TREND_WINDOWS: { value: TrendWindow; label: string }[] = [
+  { value: 7, label: '7 ימים' },
+  { value: 14, label: '14 יום' },
+  { value: 28, label: '28 יום' },
+]
 
 interface Props {
   levers: LeverDefinition[] | undefined
@@ -30,6 +37,8 @@ export function LeverPanel({ levers, snapshot, tab }: Props) {
   const setLever = useLeverStore((state) => state.setLever)
   const resetLever = useLeverStore((state) => state.resetLever)
   const resetAll = useLeverStore((state) => state.resetAll)
+  const trendWindow = useLeverStore((state) => state.trendWindow)
+  const setTrendWindow = useLeverStore((state) => state.setTrendWindow)
 
   const visible = useMemo(
     () => (levers ?? []).filter((lever) => lever.tabs.includes(tab)),
@@ -87,6 +96,33 @@ export function LeverPanel({ levers, snapshot, tab }: Props) {
       </div>
 
       <div className="flex-1 space-y-5 overflow-y-auto p-4">
+        <section>
+          <div className="mb-2 flex items-center gap-2">
+            <CalendarRange className="h-3.5 w-3.5 text-[var(--color-ink-soft)]" aria-hidden />
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-[var(--color-ink-soft)]">
+              טווח זמן בגרפים
+            </h3>
+          </div>
+          <div className="grid grid-cols-3 gap-1 rounded-lg bg-[var(--color-surface-sunken)] p-1">
+            {TREND_WINDOWS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setTrendWindow(option.value)}
+                aria-pressed={trendWindow === option.value}
+                className={cn(
+                  'rounded-md px-2 py-1.5 text-xs font-medium transition-colors',
+                  trendWindow === option.value
+                    ? 'bg-[var(--color-surface)] text-[var(--color-ink)] shadow-[var(--shadow-raised)]'
+                    : 'text-[var(--color-ink-muted)] hover:text-[var(--color-ink-soft)]',
+                )}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </section>
+
         {GROUP_ORDER.map((group) => {
           const groupLevers = grouped.get(group)
           if (!groupLevers?.length) return null

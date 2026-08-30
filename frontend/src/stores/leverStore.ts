@@ -18,6 +18,9 @@ import type { LeverId, SimulationTab } from '@/types/api'
 type LeverValues = Partial<Record<LeverId, number>>
 type TouchedMap = Partial<Record<LeverId, true>>
 
+/** How much of the observed history the trend charts show. */
+export type TrendWindow = 7 | 14 | 28
+
 interface LeverState {
   centerId: string | null
   tab: SimulationTab
@@ -29,6 +32,8 @@ interface LeverState {
   touched: TouchedMap
   /** Set when a refresh changed the baseline under an active scenario. */
   baselineMoved: boolean
+  /** Window applied to every trend chart, independent of any one center. */
+  trendWindow: TrendWindow
 
   syncBaseline: (centerId: string, defaults: LeverValues) => void
   setLever: (id: LeverId, value: number) => void
@@ -36,6 +41,7 @@ interface LeverState {
   resetAll: () => void
   applyScenario: (levers: LeverValues) => void
   setTab: (tab: SimulationTab) => void
+  setTrendWindow: (window: TrendWindow) => void
   acknowledgeBaselineMove: () => void
 }
 
@@ -54,6 +60,7 @@ export const useLeverStore = create<LeverState>((set, get) => ({
   defaults: {},
   touched: {},
   baselineMoved: false,
+  trendWindow: 28,
 
   syncBaseline: (centerId, defaults) => {
     const state = get()
@@ -117,6 +124,8 @@ export const useLeverStore = create<LeverState>((set, get) => ({
     }),
 
   setTab: (tab) => set({ tab }),
+
+  setTrendWindow: (trendWindow) => set({ trendWindow }),
 
   acknowledgeBaselineMove: () => set({ baselineMoved: false }),
 }))
