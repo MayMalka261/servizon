@@ -138,8 +138,16 @@ def build_dataset(
         raise EtlError("interactions table has no usable timestamps")
 
     latest = interactions["ts_bucket"].max()
-    baseline_from = latest - pd.Timedelta(days=BASELINE_WINDOW_DAYS)
-    trend_from = latest - pd.Timedelta(days=TREND_DAYS)
+    # Whole calendar days, not a raw timestamp cutoff: `latest` carries a
+    # time-of-day, and slicing `latest - N days` chops the boundary day in
+    # half. Averaging a nearly-empty half-day in with N-1 full days understates
+    # the window by however much traffic that missing half-day would have had
+    # — enough, in practice, to make a 7-day window look busier than the
+    # 14-day one it is nested inside, which is what a date-range comparison
+    # would otherwise flag as nonsensical.
+    latest_day = latest.normalize()
+    baseline_from = latest_day - pd.Timedelta(days=BASELINE_WINDOW_DAYS - 1)
+    trend_from = latest_day - pd.Timedelta(days=TREND_DAYS - 1)
 
     recent_interactions = interactions[interactions["ts_bucket"] >= baseline_from]
     recent_staffing = staffing[staffing["ts_bucket"] >= baseline_from]
