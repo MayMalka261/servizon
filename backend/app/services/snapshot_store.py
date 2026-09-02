@@ -15,7 +15,27 @@ import threading
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
+import pandas as pd
+
 from app.domain.models import ServiceCenter, Snapshot
+
+
+@dataclass(frozen=True, slots=True)
+class CenterHistory:
+    """Raw per-center history behind the live snapshot, kept for on-demand
+    recomputation against a caller-chosen date range.
+
+    Not part of the API — the engine only ever sees the `BaselineMetrics`
+    derived from it. Holding these frames (rather than re-hitting the
+    repository per request) is what makes the date-range filter cheap: it
+    reuses exactly the rows already loaded for the trend chart.
+    """
+
+    interactions: pd.DataFrame
+    staffing: pd.DataFrame
+    channels: pd.DataFrame
+    working_hours: float
+    center_type: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -24,6 +44,7 @@ class Generation:
 
     centers: dict[str, ServiceCenter]
     snapshots: dict[str, Snapshot]
+    history: dict[str, CenterHistory]
     loaded_at: datetime
     #: Increments on every successful refresh.
     revision: int
@@ -42,12 +63,14 @@ class SnapshotStore:
         self,
         centers: dict[str, ServiceCenter],
         snapshots: dict[str, Snapshot],
+        history: dict[str, CenterHistory],
     ) -> Generation:
         with self._lock:
             revision = (self._generation.revision + 1) if self._generation else 1
             generation = Generation(
                 centers=centers,
                 snapshots=snapshots,
+                history=history,
                 loaded_at=datetime.now(UTC),
                 revision=revision,
             )
@@ -83,6 +106,9 @@ class SnapshotStore:
 
     def get_snapshot(self, center_id: str) -> Snapshot | None:
         return self.current().snapshots.get(center_id)
+
+    def get_history(self, center_id: str) -> CenterHistory | None:
+        return self.current().history.get(center_id)
 
     @property
     def loaded_at(self) -> datetime | None:

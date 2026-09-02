@@ -101,13 +101,14 @@ class TestParity:
         engine = SimulationEngine(get_settings().coefficients_path)
 
         def load(repo):
-            return build_dataset(
+            centers, snapshots, _history = build_dataset(
                 centers=repo.load_centers(),
                 interactions=repo.load_interactions(),
                 staffing=repo.load_staffing(),
                 channels=repo.load_channels(),
                 coefficients_for=engine.coefficients_for,
             )
+            return centers, snapshots
 
         csv_centers, csv_snapshots = load(csv_repo)
         sql_centers, sql_snapshots = load(sql_repo)
@@ -131,7 +132,7 @@ class TestParity:
         engine = SimulationEngine(get_settings().coefficients_path)
 
         def simulate(repo):
-            centers, snapshots = build_dataset(
+            centers, snapshots, _history = build_dataset(
                 centers=repo.load_centers(),
                 interactions=repo.load_interactions(),
                 staffing=repo.load_staffing(),

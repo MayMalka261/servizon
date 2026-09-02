@@ -181,7 +181,9 @@ export function SimulationCenterPage() {
           <div className="shrink-0">
             <h2 className="text-sm font-semibold text-[var(--color-ink)]">מדדי השירות</h2>
             <p className="text-[11px] text-[var(--color-ink-muted)]">
-              מדד המושפע משינוי הפילטרים ומגמת השינוי מול המצב הנוכחי.
+              {trendRange.from || trendRange.to
+                ? `"מצב נוכחי" מציג את הנתונים בטווח שנבחר${rangeLabel ? ` (${rangeLabel})` : ''}.`
+                : 'מדד המושפע משינוי הפילטרים ומגמת השינוי מול המצב הנוכחי.'}
             </p>
           </div>
 

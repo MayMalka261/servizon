@@ -42,6 +42,7 @@ from app.domain.models import (
     TrendPoint,
     TrendSeries,
 )
+from app.services.snapshot_store import CenterHistory
 from app.simulation import rules as R
 from app.simulation.coefficients import Coefficients
 from app.simulation.engine import evaluate, extract_kpi
@@ -121,8 +122,9 @@ def build_dataset(
     staffing: pd.DataFrame,
     channels: pd.DataFrame,
     coefficients_for: CoefficientsResolver,
-) -> tuple[dict[str, ServiceCenter], dict[str, Snapshot]]:
-    """Build the center directory and one snapshot per center."""
+) -> tuple[dict[str, ServiceCenter], dict[str, Snapshot], dict[str, CenterHistory]]:
+    """Build the center directory, one snapshot per center, and the raw
+    per-center history (trend window) behind it."""
     if centers.empty:
         raise EtlError("centers table is empty")
     if interactions.empty:
@@ -142,14 +144,20 @@ def build_dataset(
     recent_interactions = interactions[interactions["ts_bucket"] >= baseline_from]
     recent_staffing = staffing[staffing["ts_bucket"] >= baseline_from]
     trend_interactions = interactions[interactions["ts_bucket"] >= trend_from]
+    #: Staffing over the same window as the trend, so a date range picked
+    #: anywhere on the trend chart has a matching roster to compute against —
+    #: not just the narrower window the default baseline uses.
+    trend_staffing = staffing[staffing["ts_bucket"] >= trend_from]
 
     interactions_by_center = dict(tuple(recent_interactions.groupby("center_id", sort=False)))
     staffing_by_center = dict(tuple(recent_staffing.groupby("center_id", sort=False)))
     trend_by_center = dict(tuple(trend_interactions.groupby("center_id", sort=False)))
+    trend_staffing_by_center = dict(tuple(trend_staffing.groupby("center_id", sort=False)))
     channels_by_center = dict(tuple(channels.groupby("center_id", sort=False)))
 
     directory: dict[str, ServiceCenter] = {}
     snapshots: dict[str, Snapshot] = {}
+    history: dict[str, CenterHistory] = {}
 
     for row in centers.itertuples(index=False):
         center_id = str(row.center_id)
@@ -226,10 +234,18 @@ def build_dataset(
             lever_bounds=_lever_bounds(baseline),
         )
 
+        history[center_id] = CenterHistory(
+            interactions=trend_by_center.get(center_id, pd.DataFrame()),
+            staffing=trend_staffing_by_center.get(center_id, pd.DataFrame()),
+            channels=channels_by_center.get(center_id, pd.DataFrame()),
+            working_hours=float(row.working_hours_per_day),
+            center_type=center_type.value,
+        )
+
     if not directory:
         raise EtlError("no center produced a usable snapshot")
 
-    return directory, snapshots
+    return directory, snapshots, history
 
 
 def _enabled_channels(channels: pd.DataFrame) -> tuple[ChannelKind, ...]:
@@ -366,6 +382,45 @@ def _build_baseline(
         "observed_abandonment": observed_abandonment,
     }
     return baseline, observed
+
+
+def build_baseline_for_range(
+    history: CenterHistory,
+    coefficients: Coefficients,
+    date_from: str | None,
+    date_to: str | None,
+) -> BaselineMetrics | None:
+    """Recompute a center's baseline from a caller-chosen slice of its history.
+
+    Reuses the exact same aggregation the live baseline goes through — the
+    only difference is which rows of the already-loaded trend window are fed
+    in. Returns `None` when the window has no data (out of range, or the two
+    bounds cross), so the caller can fall back to the live baseline rather
+    than serve a made-up state.
+    """
+    interactions = history.interactions
+    staffing = history.staffing
+
+    if date_from:
+        start = pd.Timestamp(date_from)
+        interactions = interactions[interactions["ts_bucket"] >= start]
+        staffing = staffing[staffing["ts_bucket"] >= start]
+    if date_to:
+        # Inclusive of the entire end day.
+        end = pd.Timestamp(date_to) + pd.Timedelta(days=1)
+        interactions = interactions[interactions["ts_bucket"] < end]
+        staffing = staffing[staffing["ts_bucket"] < end]
+
+    if interactions.empty:
+        return None
+
+    baseline, observed = _build_baseline(
+        interactions=interactions,
+        staffing=staffing,
+        channels=history.channels,
+        working_hours=history.working_hours,
+    )
+    return _recalibrate_patience(baseline, coefficients, observed)
 
 
 def _channel_config(channels: pd.DataFrame, interactions: pd.DataFrame) -> dict[str, float]:

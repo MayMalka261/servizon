@@ -48,6 +48,7 @@ export function useSimulation(centerId: string | undefined, tab: SimulationTab) 
   // it, Zustand's reference equality re-renders on every store notification.
   const moved = useLeverStore(useShallow(selectMovedValues))
   const snapshotId = useLeverStore((state) => state.centerId)
+  const trendRange = useLeverStore((state) => state.trendRange)
 
   // Settle the drag before asking the server. The engine is authoritative
   // server-side, so there is exactly one implementation of the model.
@@ -57,6 +58,8 @@ export function useSimulation(centerId: string | undefined, tab: SimulationTab) 
     center_id: centerId ?? '',
     tab,
     levers: settledValues,
+    date_from: trendRange.from,
+    date_to: trendRange.to,
   }
 
   return useQuery({

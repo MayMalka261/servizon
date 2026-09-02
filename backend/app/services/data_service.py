@@ -51,7 +51,7 @@ class DataService:
             staffing = self._repository.load_staffing()
             channels = self._repository.load_channels()
 
-            directory, snapshots = build_dataset(
+            directory, snapshots, history = build_dataset(
                 centers=centers,
                 interactions=interactions,
                 staffing=staffing,
@@ -63,7 +63,7 @@ class DataService:
             self._store.record_failure(str(exc))
             return None
 
-        generation = self._store.publish(directory, snapshots)
+        generation = self._store.publish(directory, snapshots, history)
         log.info(
             "refresh_complete",
             source=self._repository.name,

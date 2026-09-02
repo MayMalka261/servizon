@@ -222,6 +222,9 @@ export interface SimulationRequest {
   tab: SimulationTab
   levers: Partial<Record<LeverId, number>>
   snapshot_id?: string | null
+  /** ISO date (YYYY-MM-DD). Narrows "current" to this window of history. */
+  date_from?: string | null
+  date_to?: string | null
 }
 
 export interface Scenario {

@@ -216,6 +216,11 @@ class SimulationRequest(BaseModel):
     #: background refresh has moved on, the server recomputes against the
     #: current snapshot and flags it via `snapshot_changed`.
     snapshot_id: str | None = None
+    #: Restricts "current" (and therefore "scenario") to history observed in
+    #: this window instead of the rolling live baseline. Either end may be
+    #: omitted to leave that side open. ISO dates (YYYY-MM-DD).
+    date_from: str | None = Field(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$")
+    date_to: str | None = Field(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$")
 
 
 class SimulatedKpi(Frozen):

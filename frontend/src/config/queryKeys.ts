@@ -17,7 +17,14 @@ export const queryKeys = {
   snapshot: (centerId: string) => ['snapshot', centerId] as const,
 
   simulation: (request: SimulationRequest) =>
-    ['simulation', request.center_id, request.tab, request.levers] as const,
+    [
+      'simulation',
+      request.center_id,
+      request.tab,
+      request.levers,
+      request.date_from ?? null,
+      request.date_to ?? null,
+    ] as const,
 
   scenarios: (centerId: string) => ['scenarios', centerId] as const,
   comparison: (centerId: string, scenarioIds: string[]) =>

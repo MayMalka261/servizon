@@ -296,9 +296,14 @@ class SimulationEngine:
         requested_levers: dict[LeverId, float],
         *,
         snapshot_changed: bool = False,
+        baseline_override: BaselineMetrics | None = None,
     ) -> SimulationResult:
         coefficients = self.coefficients_for(center_type)
-        baseline = snapshot.baseline
+        # A caller-chosen history window replaces "current" (and, by
+        # extension, "scenario") without touching lever defaults or bounds —
+        # those still anchor to the live snapshot, since they describe what
+        # you are deciding to change going forward, not a historical figure.
+        baseline = baseline_override if baseline_override is not None else snapshot.baseline
 
         display, model = resolve_levers(snapshot, requested_levers, tab)
 
