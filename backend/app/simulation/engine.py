@@ -135,6 +135,13 @@ _KPI_SOURCES: dict[KpiId, str] = {
 }
 
 
+#: These two read as a count of contacts for whatever period is on screen.
+#: Every other KPI (wait time, SLA, abandonment, required agents, AHT...) is a
+#: rate or a state and must stay window-length independent — a longer window
+#: does not mean a higher average wait time.
+_TOTALED_OVER_WINDOW: frozenset[KpiId] = frozenset({KpiId.INCOMING_CALLS, KpiId.DIGITAL_CONTACTS})
+
+
 def extract_kpi(
     kpi_id: KpiId,
     values: dict[str, float],
@@ -147,7 +154,10 @@ def extract_kpi(
     source = _KPI_SOURCES.get(kpi_id)
     if source is None:  # pragma: no cover - registry and sources are kept in sync
         raise KeyError(f"no rule output mapped for KPI {kpi_id}")
-    return values[source]
+    value = values[source]
+    if kpi_id in _TOTALED_OVER_WINDOW:
+        value *= baseline.window_days
+    return value
 
 
 def _round_for_display(kpi_id: KpiId, value: float) -> float:

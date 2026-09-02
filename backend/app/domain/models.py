@@ -102,6 +102,13 @@ class BaselineMetrics(Frozen):
     queue_size: float = Field(ge=0)
     #: Mean caller patience in seconds, fitted from observed abandonment.
     patience_sec: float = Field(gt=0)
+    #: Calendar days this baseline was averaged over. `daily_contacts` and
+    #: `digital_contacts` are per-day rates — Erlang C needs a rate, not a
+    #: period sum — but "כמות שיחות"/"כמות פניות" read as a count for whatever
+    #: period is on screen, so the engine multiplies back out by this before
+    #: displaying them. Defaults to 1 so a baseline built by hand (tests) is a
+    #: single day unless it says otherwise.
+    window_days: float = Field(default=1.0, gt=0)
 
 
 class KpiValue(Frozen):

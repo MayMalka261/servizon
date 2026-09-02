@@ -383,6 +383,7 @@ def _build_baseline(
             observed_abandonment=observed_abandonment,
             observed_asa_sec=observed_wait,
         ),
+        window_days=float(days),
     )
 
     observed = {
