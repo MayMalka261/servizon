@@ -18,8 +18,17 @@ import type { LeverId, SimulationTab } from '@/types/api'
 type LeverValues = Partial<Record<LeverId, number>>
 type TouchedMap = Partial<Record<LeverId, true>>
 
-/** How much of the observed history the trend charts show. */
-export type TrendWindow = 7 | 14 | 28
+/**
+ * The date range applied to every trend chart. `null` on either end means
+ * "unbounded on that side" — `{ from: null, to: null }` is the full history.
+ * Dates are ISO (YYYY-MM-DD), matching `TrendPoint.date`.
+ */
+export interface TrendRange {
+  from: string | null
+  to: string | null
+}
+
+const FULL_RANGE: TrendRange = { from: null, to: null }
 
 interface LeverState {
   centerId: string | null
@@ -32,8 +41,8 @@ interface LeverState {
   touched: TouchedMap
   /** Set when a refresh changed the baseline under an active scenario. */
   baselineMoved: boolean
-  /** Window applied to every trend chart, independent of any one center. */
-  trendWindow: TrendWindow
+  /** Range applied to every trend chart, independent of any one center. */
+  trendRange: TrendRange
 
   syncBaseline: (centerId: string, defaults: LeverValues) => void
   setLever: (id: LeverId, value: number) => void
@@ -41,7 +50,7 @@ interface LeverState {
   resetAll: () => void
   applyScenario: (levers: LeverValues) => void
   setTab: (tab: SimulationTab) => void
-  setTrendWindow: (window: TrendWindow) => void
+  setTrendRange: (range: TrendRange) => void
   acknowledgeBaselineMove: () => void
 }
 
@@ -60,7 +69,7 @@ export const useLeverStore = create<LeverState>((set, get) => ({
   defaults: {},
   touched: {},
   baselineMoved: false,
-  trendWindow: 28,
+  trendRange: FULL_RANGE,
 
   syncBaseline: (centerId, defaults) => {
     const state = get()
@@ -125,7 +134,7 @@ export const useLeverStore = create<LeverState>((set, get) => ({
 
   setTab: (tab) => set({ tab }),
 
-  setTrendWindow: (trendWindow) => set({ trendWindow }),
+  setTrendRange: (trendRange) => set({ trendRange }),
 
   acknowledgeBaselineMove: () => set({ baselineMoved: false }),
 }))

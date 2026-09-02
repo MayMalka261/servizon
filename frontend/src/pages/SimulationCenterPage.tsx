@@ -57,17 +57,29 @@ export function SimulationCenterPage() {
     }
   }, [result])
 
-  const trendWindow = useLeverStore((state) => state.trendWindow)
+  const trendRange = useLeverStore((state) => state.trendRange)
 
   const series = useMemo(() => {
     const raw = snapshot?.trend?.[tab]
     if (!raw) return undefined
+    const inRange = (point: { date: string }) =>
+      (trendRange.from === null || point.date >= trendRange.from) &&
+      (trendRange.to === null || point.date <= trendRange.to)
     return {
-      volume: raw.volume.slice(-trendWindow),
-      abandonment: raw.abandonment.slice(-trendWindow),
-      aht: raw.aht.slice(-trendWindow),
+      volume: raw.volume.filter(inRange),
+      abandonment: raw.abandonment.filter(inRange),
+      aht: raw.aht.filter(inRange),
     }
-  }, [snapshot, tab, trendWindow])
+  }, [snapshot, tab, trendRange])
+
+  // A human-readable label for the selected span, used in chart descriptions.
+  const rangeLabel = useMemo(() => {
+    const points = series?.volume
+    if (!points || points.length === 0) return null
+    return points.length === 1
+      ? points[0]!.label
+      : `${points[0]!.label} – ${points[points.length - 1]!.label}`
+  }, [series])
 
   // Digital share is the filter's own value, so the gauge is built from the
   // store rather than from a KPI card. Reading it back off the server would be
@@ -202,7 +214,7 @@ export function SimulationCenterPage() {
                 scenarioDaily={kpi.calls?.scenario}
                 title="מגמת נפח שיחות"
                 accent={accent}
-                windowDays={trendWindow}
+                rangeLabel={rangeLabel}
               />
               <BarComparison kpis={result?.kpis ?? []} tab={tab} accent={accent} />
               <MetricTrendChart
@@ -230,7 +242,7 @@ export function SimulationCenterPage() {
                 scenarioDaily={kpi.digitalContacts?.scenario}
                 title="כמות פניות דיגיטליות לאורך זמן"
                 accent={accent}
-                windowDays={trendWindow}
+                rangeLabel={rangeLabel}
               />
               <BarComparison kpis={result?.kpis ?? []} tab={tab} accent={accent} />
               <MetricTrendChart

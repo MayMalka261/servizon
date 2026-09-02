@@ -117,6 +117,10 @@ class KpiValue(Frozen):
 class TrendPoint(Frozen):
     """One bucket of the historical trend line."""
 
+    #: ISO date (YYYY-MM-DD). `label` is the same day pre-formatted for the
+    #: chart axis; `date` is what a date-range picker filters against, since
+    #: `label` alone (day/month, no year) cannot be parsed back reliably.
+    date: str
     label: str
     value: float
 

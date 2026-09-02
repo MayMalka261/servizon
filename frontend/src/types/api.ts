@@ -127,6 +127,8 @@ export interface KpiValue {
 }
 
 export interface TrendPoint {
+  /** ISO date (YYYY-MM-DD), for range filtering. */
+  date: string
   label: string
   value: number
 }

@@ -447,7 +447,11 @@ def _recalibrate_patience(
 
 def _points(index: pd.Index, values: pd.Series, digits: int) -> tuple[TrendPoint, ...]:
     return tuple(
-        TrendPoint(label=day.strftime("%d/%m"), value=round(float(value), digits))
+        TrendPoint(
+            date=day.strftime("%Y-%m-%d"),
+            label=day.strftime("%d/%m"),
+            value=round(float(value), digits),
+        )
         for day, value in zip(index, values, strict=True)
     )
 

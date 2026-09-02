@@ -27,13 +27,13 @@ export function TrendChart({
   scenarioDaily,
   title,
   accent,
-  windowDays = 28,
+  rangeLabel,
 }: {
   trend: TrendPoint[]
   scenarioDaily: number | undefined
   title: string
   accent: string
-  windowDays?: number
+  rangeLabel?: string | null
 }) {
   if (trend.length === 0) {
     return (
@@ -46,7 +46,11 @@ export function TrendChart({
   return (
     <ChartFrame
       title={title}
-      description={`נפח יומי בפועל ב-${windowDays} הימים האחרונים, מול הנפח הצפוי בתרחיש.`}
+      description={
+        rangeLabel
+          ? `נפח יומי בפועל בין ${rangeLabel}, מול הנפח הצפוי בתרחיש.`
+          : 'נפח יומי בפועל, מול הנפח הצפוי בתרחיש.'
+      }
     >
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={trend} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>

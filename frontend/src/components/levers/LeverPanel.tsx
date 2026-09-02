@@ -3,17 +3,18 @@ import { CalendarRange, RotateCcw, SlidersHorizontal } from 'lucide-react'
 
 import { Button, Skeleton } from '@/components/ui'
 import { LeverControl } from './LeverControl'
-import { useLeverStore, type TrendWindow } from '@/stores/leverStore'
+import { useLeverStore } from '@/stores/leverStore'
+import { clampIsoDate, shiftIsoDate } from '@/lib/dateRange'
 import { cn } from '@/lib/utils'
 import { ACCENTS } from '@/simulation/theme'
 import type { LeverBounds, LeverDefinition, LeverGroup, SimulationTab, Snapshot } from '@/types/api'
 
 const GROUP_ORDER: LeverGroup[] = ['digital', 'workforce', 'ai', 'quality', 'targets']
 
-const TREND_WINDOWS: { value: TrendWindow; label: string }[] = [
-  { value: 7, label: '7 ימים' },
-  { value: 14, label: '14 יום' },
-  { value: 28, label: '28 יום' },
+const RANGE_PRESETS: { days: number; label: string }[] = [
+  { days: 7, label: '7 ימים' },
+  { days: 14, label: '14 יום' },
+  { days: 30, label: '30 יום' },
 ]
 
 interface Props {
@@ -37,8 +38,17 @@ export function LeverPanel({ levers, snapshot, tab }: Props) {
   const setLever = useLeverStore((state) => state.setLever)
   const resetLever = useLeverStore((state) => state.resetLever)
   const resetAll = useLeverStore((state) => state.resetAll)
-  const trendWindow = useLeverStore((state) => state.trendWindow)
-  const setTrendWindow = useLeverStore((state) => state.setTrendWindow)
+  const trendRange = useLeverStore((state) => state.trendRange)
+  const setTrendRange = useLeverStore((state) => state.setTrendRange)
+
+  // The date input needs real bounds — the earliest and latest day the
+  // center actually has history for — so the picker can't be aimed at a
+  // range with nothing in it.
+  const dateBounds = useMemo(() => {
+    const points = snapshot?.trend[tab]?.volume
+    if (!points || points.length === 0) return null
+    return { min: points[0]!.date, max: points[points.length - 1]!.date }
+  }, [snapshot, tab])
 
   const visible = useMemo(
     () => (levers ?? []).filter((lever) => lever.tabs.includes(tab)),
@@ -100,27 +110,92 @@ export function LeverPanel({ levers, snapshot, tab }: Props) {
           <div className="mb-2 flex items-center gap-2">
             <CalendarRange className="h-3.5 w-3.5 text-[var(--color-ink-soft)]" aria-hidden />
             <h3 className="text-xs font-semibold uppercase tracking-wide text-[var(--color-ink-soft)]">
-              טווח זמן בגרפים
+              טווח תאריכים בגרפים
             </h3>
           </div>
-          <div className="grid grid-cols-3 gap-1 rounded-lg bg-[var(--color-surface-sunken)] p-1">
-            {TREND_WINDOWS.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => setTrendWindow(option.value)}
-                aria-pressed={trendWindow === option.value}
-                className={cn(
-                  'rounded-md px-2 py-1.5 text-xs font-medium transition-colors',
-                  trendWindow === option.value
-                    ? 'bg-[var(--color-surface)] text-[var(--color-ink)] shadow-[var(--shadow-raised)]'
-                    : 'text-[var(--color-ink-muted)] hover:text-[var(--color-ink-soft)]',
-                )}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
+
+          {dateBounds ? (
+            <div className="space-y-2">
+              <div className="grid grid-cols-4 gap-1 rounded-lg bg-[var(--color-surface-sunken)] p-1">
+                {RANGE_PRESETS.map((preset) => {
+                  const from = clampIsoDate(
+                    shiftIsoDate(dateBounds.max, -(preset.days - 1)),
+                    dateBounds.min,
+                    dateBounds.max,
+                  )
+                  const isActive = trendRange.from === from && trendRange.to === dateBounds.max
+                  return (
+                    <button
+                      key={preset.days}
+                      type="button"
+                      onClick={() => setTrendRange({ from, to: dateBounds.max })}
+                      aria-pressed={isActive}
+                      className={cn(
+                        'rounded-md px-1.5 py-1.5 text-xs font-medium transition-colors',
+                        isActive
+                          ? 'bg-[var(--color-surface)] text-[var(--color-ink)] shadow-[var(--shadow-raised)]'
+                          : 'text-[var(--color-ink-muted)] hover:text-[var(--color-ink-soft)]',
+                      )}
+                    >
+                      {preset.label}
+                    </button>
+                  )
+                })}
+                <button
+                  type="button"
+                  onClick={() => setTrendRange({ from: null, to: null })}
+                  aria-pressed={trendRange.from === null && trendRange.to === null}
+                  className={cn(
+                    'rounded-md px-1.5 py-1.5 text-xs font-medium transition-colors',
+                    trendRange.from === null && trendRange.to === null
+                      ? 'bg-[var(--color-surface)] text-[var(--color-ink)] shadow-[var(--shadow-raised)]'
+                      : 'text-[var(--color-ink-muted)] hover:text-[var(--color-ink-soft)]',
+                  )}
+                >
+                  הכל
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <label className="block">
+                  <span className="mb-1 block text-[11px] text-[var(--color-ink-muted)]">מ-</span>
+                  <input
+                    type="date"
+                    value={trendRange.from ?? dateBounds.min}
+                    min={dateBounds.min}
+                    max={trendRange.to ?? dateBounds.max}
+                    onChange={(event) =>
+                      setTrendRange({ ...trendRange, from: event.target.value || null })
+                    }
+                    className={cn(
+                      'h-9 w-full rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-surface)]',
+                      'px-2 text-xs text-[var(--color-ink)] transition-colors',
+                      'focus:border-[var(--color-brand)] focus:outline-none',
+                    )}
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-1 block text-[11px] text-[var(--color-ink-muted)]">עד</span>
+                  <input
+                    type="date"
+                    value={trendRange.to ?? dateBounds.max}
+                    min={trendRange.from ?? dateBounds.min}
+                    max={dateBounds.max}
+                    onChange={(event) =>
+                      setTrendRange({ ...trendRange, to: event.target.value || null })
+                    }
+                    className={cn(
+                      'h-9 w-full rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-surface)]',
+                      'px-2 text-xs text-[var(--color-ink)] transition-colors',
+                      'focus:border-[var(--color-brand)] focus:outline-none',
+                    )}
+                  />
+                </label>
+              </div>
+            </div>
+          ) : (
+            <Skeleton className="h-9 w-full" />
+          )}
         </section>
 
         {GROUP_ORDER.map((group) => {
